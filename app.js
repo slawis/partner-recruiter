@@ -7,9 +7,9 @@
 const CONFIG = {
     baseUrl: window.location.origin + window.location.pathname,
     inviters: {
-        'Sławek': { name: 'Sławek', role: 'Właściciel', phone: '' },
-        'Marcin': { name: 'Marcin Górecki', role: 'Manager', phone: '606 285 419' },
-        'Irek': { name: 'Irek Lewandowski', role: 'Manager', phone: '533 210 540' }
+        'Sławek': { name: 'Sławomir Wiśniewski', role: 'Właściciel', phone: '', email: '' },
+        'Marcin': { name: 'Marcin Górecki', role: 'Manager', phone: '606 285 419', email: '' },
+        'Irek': { name: 'Irek Lewandowski', role: 'Manager', phone: '533 210 540', email: '' }
     },
     emailStyles: {
         direct: {
@@ -116,15 +116,44 @@ function detectMode() {
 
     if (hasLandingParams) {
         AppState.mode = 'landing';
+
+        // Pobierz dane partnera
+        const partnerName = urlParams.get('n') || '';
+        const partnerLastName = urlParams.get('ln') || '';
+        const partnerCompany = urlParams.get('c') || '';
+
+        // Pobierz dane zapraszającego
+        const inviterKey = urlParams.get('z') || '';
+        const inviterFullName = urlParams.get('zn') || ''; // Pełne imię z URL
+        const inviterRole = urlParams.get('zr') || '';
+        const inviterPhone = urlParams.get('zp') || '';
+        const inviterEmail = urlParams.get('ze') || '';
+        const inviterBio = urlParams.get('zb') || '';
+        const inviterPhoto = urlParams.get('zph') || '';
+
+        // Fallback do CONFIG jeśli brak w URL
+        const configInviter = CONFIG.inviters[inviterKey] || {};
+
         AppState.landingParams = {
-            partnerName: urlParams.get('n') || 'Partnerze',
-            partnerLastName: urlParams.get('ln') || null,
-            partnerCompany: urlParams.get('c') || null,
-            partnerNIP: urlParams.get('nip') || null,
-            partnerPhone: urlParams.get('p') || null,
-            partnerEmail: urlParams.get('e') || null,
-            partnerAddress: urlParams.get('a') || null,
-            inviterName: urlParams.get('z') || 'Partner',
+            // Partner
+            partnerName: partnerName,
+            partnerLastName: partnerLastName,
+            partnerFullName: partnerLastName ? `${partnerName} ${partnerLastName}` : partnerName,
+            partnerCompany: partnerCompany,
+            partnerNIP: urlParams.get('nip') || '',
+            partnerPhone: urlParams.get('p') || '',
+            partnerEmail: urlParams.get('e') || '',
+            partnerAddress: urlParams.get('a') || '',
+
+            // Zapraszający - priorytet: URL > CONFIG > domyślne
+            inviterKey: inviterKey,
+            inviterName: inviterFullName || configInviter.name || inviterKey || 'Twój doradca',
+            inviterRole: inviterRole || configInviter.role || '',
+            inviterPhone: inviterPhone || configInviter.phone || '',
+            inviterEmail: inviterEmail || configInviter.email || '',
+            inviterBio: inviterBio || configInviter.bio || '',
+            inviterPhoto: inviterPhoto || configInviter.photo || '',
+
             invitationId: urlParams.get('id') || null
         };
 
@@ -167,6 +196,12 @@ function initGenerator() {
     // Render history
     renderHistory();
 
+    // Initialize dashboard tabs
+    initDashboardTabs();
+
+    // Initialize calendar
+    initCalendar();
+
     // Style selector
     const styleOptions = document.querySelectorAll('.style-option');
     styleOptions.forEach(option => {
@@ -184,7 +219,8 @@ function initGenerator() {
     });
 
     // Form submit
-    document.getElementById('generatorForm').addEventListener('submit', handleGenerateInvitation);
+    const generatorForm = document.getElementById('generatorForm');
+    if (generatorForm) generatorForm.addEventListener('submit', handleGenerateInvitation);
 
     // Preview tabs
     const tabs = document.querySelectorAll('.preview-tab');
@@ -196,18 +232,259 @@ function initGenerator() {
     });
 
     // Copy buttons
-    document.getElementById('btnCopyEmail').addEventListener('click', copyEmail);
-    document.getElementById('btnCopyLink').addEventListener('click', copyLink);
-    document.getElementById('btnOpenPreview').addEventListener('click', openPreview);
+    const btnCopyEmail = document.getElementById('btnCopyEmail');
+    const btnCopyLink = document.getElementById('btnCopyLink');
+    const btnOpenPreview = document.getElementById('btnOpenPreview');
+    const btnClearHistory = document.getElementById('btnClearHistory');
 
-    // Clear history
-    document.getElementById('btnClearHistory').addEventListener('click', clearHistory);
+    if (btnCopyEmail) btnCopyEmail.addEventListener('click', copyEmail);
+    if (btnCopyLink) btnCopyLink.addEventListener('click', copyLink);
+    if (btnOpenPreview) btnOpenPreview.addEventListener('click', openPreview);
+    if (btnClearHistory) btnClearHistory.addEventListener('click', clearHistory);
+}
+
+// ============ DASHBOARD TABS ============
+function initDashboardTabs() {
+    const tabs = document.querySelectorAll('.dashboard-tab');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.dataset.tab;
+
+            // Update tab buttons
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.dashboard-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const targetContent = document.getElementById(`tab${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
+            if (targetContent) targetContent.classList.add('active');
+        });
+    });
+}
+
+// ============ CALENDAR ============
+let calendarFilter = 'all';
+
+function cleanupDuplicateMeetings() {
+    const meetings = getMeetings();
+    if (meetings.length === 0) return;
+
+    const seen = new Map();
+    const cleaned = [];
+
+    // Keep only the most recent meeting for each partner+inviter combination
+    // Sort by scheduledAt descending so we keep the newest
+    meetings.sort((a, b) => new Date(b.scheduledAt || 0) - new Date(a.scheduledAt || 0));
+
+    meetings.forEach(meeting => {
+        // Create a unique key based on invitationId or partner+inviter combination
+        let key;
+        if (meeting.invitationId) {
+            key = `id:${meeting.invitationId}`;
+        } else {
+            key = `partner:${meeting.partnerName}|${meeting.partnerPhone || ''}|${meeting.inviterName || ''}`;
+        }
+
+        if (!seen.has(key)) {
+            seen.set(key, true);
+            cleaned.push(meeting);
+        }
+    });
+
+    // Only save if we removed duplicates
+    if (cleaned.length < meetings.length) {
+        console.log(`Cleaned ${meetings.length - cleaned.length} duplicate meetings`);
+        saveMeetings(cleaned);
+    }
+}
+
+function initCalendar() {
+    // Cleanup duplicates on init
+    cleanupDuplicateMeetings();
+
+    // Initialize filter buttons
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            calendarFilter = btn.dataset.filter;
+            renderMeetings();
+        });
+    });
+
+    // Load and render meetings
+    renderMeetings();
+    updateCalendarStats();
+    updateBadgeCounts();
+}
+
+function getMeetings() {
+    const saved = localStorage.getItem('scheduledMeetings');
+    return saved ? JSON.parse(saved) : [];
+}
+
+function saveMeetings(meetings) {
+    localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
+}
+
+function renderMeetings() {
+    const container = document.getElementById('meetingsList');
+    if (!container) return;
+
+    let meetings = getMeetings();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Sort by date (newest first)
+    meetings.sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time));
+
+    // Apply filter
+    if (calendarFilter === 'upcoming') {
+        meetings = meetings.filter(m => new Date(m.date) >= today);
+    } else if (calendarFilter === 'past') {
+        meetings = meetings.filter(m => new Date(m.date) < today);
+    }
+
+    if (meetings.length === 0) {
+        container.innerHTML = `
+            <div class="meetings-empty">
+                <span class="empty-icon">📅</span>
+                <p>Brak ${calendarFilter === 'past' ? 'przeszłych' : calendarFilter === 'upcoming' ? 'nadchodzących' : 'umówionych'} spotkań</p>
+                <small>Spotkania pojawią się tutaj, gdy partnerzy umówią rozmowę</small>
+            </div>
+        `;
+        return;
+    }
+
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    const monthNames = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+
+    let html = '';
+
+    meetings.forEach(meeting => {
+        const meetingDate = new Date(meeting.date);
+        const isToday = meetingDate.toDateString() === today.toDateString();
+        const isPast = meetingDate < today;
+
+        const day = meetingDate.getDate();
+        const month = monthNames[meetingDate.getMonth()];
+        const weekday = dayNames[meetingDate.getDay()].substring(0, 3);
+
+        const cardClass = isPast ? 'past' : isToday ? 'today' : '';
+        const methodClass = meeting.method === 'phone' ? 'phone' : 'video';
+        const methodIcon = meeting.method === 'phone' ? '📞' : '🎥';
+        const methodText = meeting.method === 'phone' ? 'Telefon' : 'Video';
+
+        html += `
+            <div class="meeting-card ${cardClass}" data-id="${meeting.id}">
+                <div class="meeting-date-block">
+                    <span class="mdb-day">${day}</span>
+                    <span class="mdb-month">${month}</span>
+                    <span class="mdb-weekday">${weekday}</span>
+                </div>
+                <div class="meeting-info">
+                    <h4 class="meeting-partner-name">${meeting.partnerName || 'Partner'}</h4>
+                    <div class="meeting-details">
+                        <span class="meeting-detail">
+                            <span class="meeting-detail-icon">🕐</span>
+                            ${meeting.time}
+                        </span>
+                        ${meeting.partnerPhone ? `
+                        <span class="meeting-detail">
+                            <span class="meeting-detail-icon">📱</span>
+                            ${meeting.partnerPhone}
+                        </span>
+                        ` : ''}
+                        ${meeting.inviterName ? `
+                        <span class="meeting-detail">
+                            <span class="meeting-detail-icon">👤</span>
+                            ${meeting.inviterName}
+                        </span>
+                        ` : ''}
+                    </div>
+                </div>
+                <div class="meeting-method ${methodClass}">
+                    <span class="meeting-method-icon">${methodIcon}</span>
+                    ${methodText}
+                </div>
+                <div class="meeting-actions">
+                    <button class="meeting-action-btn delete" onclick="deleteMeeting('${meeting.id}')" title="Usuń">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function updateCalendarStats() {
+    const meetings = getMeetings();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(today);
+    endOfWeek.setDate(today.getDate() + 7);
+
+    const todayMeetings = meetings.filter(m => {
+        const d = new Date(m.date);
+        return d.toDateString() === today.toDateString();
+    }).length;
+
+    const weekMeetings = meetings.filter(m => {
+        const d = new Date(m.date);
+        return d >= today && d < endOfWeek;
+    }).length;
+
+    const totalMeetings = meetings.length;
+
+    const statToday = document.getElementById('statTodayMeetings');
+    const statWeek = document.getElementById('statWeekMeetings');
+    const statTotal = document.getElementById('statTotalMeetings');
+
+    if (statToday) statToday.textContent = todayMeetings;
+    if (statWeek) statWeek.textContent = weekMeetings;
+    if (statTotal) statTotal.textContent = totalMeetings;
+}
+
+function updateBadgeCounts() {
+    const meetings = getMeetings();
+    const history = AppState.history || [];
+
+    const historyCount = document.getElementById('historyCount');
+    const meetingsCount = document.getElementById('meetingsCount');
+
+    if (historyCount) historyCount.textContent = history.length;
+    if (meetingsCount) meetingsCount.textContent = meetings.length;
+}
+
+function deleteMeeting(meetingId) {
+    if (!confirm('Czy na pewno chcesz usunąć to spotkanie?')) return;
+
+    let meetings = getMeetings();
+    meetings = meetings.filter(m => m.id !== meetingId);
+    saveMeetings(meetings);
+
+    renderMeetings();
+    updateCalendarStats();
+    updateBadgeCounts();
+    showToast('Spotkanie usunięte', 'success');
 }
 
 function updateStatsDisplay() {
-    document.getElementById('statSent').textContent = AppState.stats.sent;
-    document.getElementById('statOpened').textContent = AppState.stats.opened;
-    document.getElementById('statConverted').textContent = AppState.stats.converted;
+    const statSent = document.getElementById('statSent');
+    const statOpened = document.getElementById('statOpened');
+    const statConverted = document.getElementById('statConverted');
+
+    if (statSent) statSent.textContent = AppState.stats.sent;
+    if (statOpened) statOpened.textContent = AppState.stats.opened;
+    if (statConverted) statConverted.textContent = AppState.stats.converted;
 }
 
 function updateEmailPreview() {
@@ -250,19 +527,39 @@ function formatEmailForDisplay(text) {
 
 function handleGenerateInvitation(e) {
     e.preventDefault();
+    console.log('handleGenerateInvitation called');
 
-    const partnerName = document.getElementById('partnerName').value.trim();
-    const partnerLastName = document.getElementById('partnerLastName').value.trim();
-    const partnerCompany = document.getElementById('partnerCompany').value.trim();
-    const partnerNIP = document.getElementById('partnerNIP').value.trim();
-    const partnerPhone = document.getElementById('partnerPhone').value.trim();
-    const partnerEmail = document.getElementById('partnerEmail').value.trim();
-    const partnerAddress = document.getElementById('partnerAddress').value.trim();
-    const inviterKey = document.getElementById('inviterSelect').value;
-    const style = document.querySelector('input[name="emailStyle"]:checked').value;
+    const partnerNameEl = document.getElementById('partnerName');
+    const inviterSelectEl = document.getElementById('inviterSelect');
+    const styleEl = document.querySelector('input[name="emailStyle"]:checked');
+
+    console.log('partnerNameEl:', partnerNameEl);
+    console.log('inviterSelectEl:', inviterSelectEl);
+    console.log('styleEl:', styleEl);
+
+    if (!partnerNameEl || !inviterSelectEl || !styleEl) {
+        console.error('Missing form elements');
+        showToast('Błąd formularza', 'error');
+        return;
+    }
+
+    const partnerName = partnerNameEl.value.trim();
+    const partnerLastName = (document.getElementById('partnerLastName')?.value || '').trim();
+    const partnerCompany = (document.getElementById('partnerCompany')?.value || '').trim();
+    const partnerNIP = (document.getElementById('partnerNIP')?.value || '').trim();
+    const partnerPhone = (document.getElementById('partnerPhone')?.value || '').trim();
+    const partnerEmail = (document.getElementById('partnerEmail')?.value || '').trim();
+    const partnerAddress = (document.getElementById('partnerAddress')?.value || '').trim();
+    const inviterKey = inviterSelectEl.value;
+    const style = styleEl.value;
+
+    console.log('partnerName:', partnerName);
+    console.log('inviterKey:', inviterKey);
+    console.log('style:', style);
 
     if (!partnerName || !inviterKey) {
         showToast('Wypełnij wymagane pola', 'error');
+        console.log('Validation failed: partnerName or inviterKey empty');
         return;
     }
 
@@ -285,7 +582,13 @@ function handleGenerateInvitation(e) {
 
     // Get email content
     const styleConfig = CONFIG.emailStyles[style];
-    const inviterInfo = CONFIG.inviters[inviterKey];
+
+    // Find inviter from InvitersState first, fallback to CONFIG
+    const inviterFromState = InvitersState.inviters.find(inv => inv.key === inviterKey);
+    const inviterInfo = inviterFromState || CONFIG.inviters[inviterKey] || { name: inviterKey };
+
+    console.log('inviterFromState:', inviterFromState);
+    console.log('inviterInfo:', inviterInfo);
 
     const emailContent = styleConfig.template({
         partnerName,
@@ -507,89 +810,316 @@ function initLanding() {
 
     // Initialize meeting scheduler
     initMeetingScheduler();
+
+    // Initialize mobile and desktop apps
+    initMobileApp();
+    initDesktopApp();
 }
 
 function personalizeContent() {
-    const {
-        partnerName,
-        partnerLastName,
-        partnerCompany,
-        partnerNIP,
-        partnerPhone,
-        partnerEmail,
-        partnerAddress,
-        inviterName
-    } = AppState.landingParams;
+    const params = AppState.landingParams;
 
-    // Update all personalized elements
-    document.getElementById('partnerDisplayName').textContent = partnerName;
-    document.getElementById('inviterName').textContent = inviterName;
-    document.getElementById('ctaInviterName').textContent = CONFIG.inviters[inviterName]?.name || inviterName;
-    document.getElementById('modalInviterName').textContent = CONFIG.inviters[inviterName]?.name || inviterName;
+    // ========== PERSONALIZACJA PARTNERA ==========
 
-    // Pre-fill registration form with name and other data
-    document.getElementById('regName').value = partnerName !== 'Partnerze' ? partnerName : '';
-    if (partnerPhone) {
-        document.getElementById('regPhone').value = partnerPhone;
-    }
-    if (partnerEmail) {
-        document.getElementById('regEmail').value = partnerEmail;
+    // Imię do powitania (tylko imię, bez nazwiska - bardziej osobiste)
+    const greetingName = params.partnerName || 'Partnerze';
+    setTextContent('partnerDisplayName', greetingName);
+    setTextContent('desktopPartnerName', greetingName);
+
+    // Pełne dane partnera do formularza rejestracji
+    const regName = document.getElementById('regName');
+    if (regName && params.partnerName) {
+        regName.value = params.partnerFullName || params.partnerName;
     }
 
-    // Populate partner info card
-    const partnerInfoCard = document.getElementById('partnerInfoCard');
-    const hasExtraInfo = partnerLastName || partnerCompany || partnerNIP || partnerPhone || partnerEmail || partnerAddress;
+    const regPhone = document.getElementById('regPhone');
+    if (regPhone && params.partnerPhone) {
+        regPhone.value = params.partnerPhone;
+    }
 
-    if (hasExtraInfo && partnerInfoCard) {
-        partnerInfoCard.style.display = 'block';
+    const regEmail = document.getElementById('regEmail');
+    if (regEmail && params.partnerEmail) {
+        regEmail.value = params.partnerEmail;
+    }
 
-        // Full name
-        const fullName = partnerLastName ? `${partnerName} ${partnerLastName}` : partnerName;
-        document.getElementById('cardPartnerFullName').textContent = fullName;
+    // ========== PERSONALIZACJA ZAPRASZAJĄCEGO ==========
 
-        // Company
-        const companyEl = document.getElementById('cardPartnerCompany');
-        if (partnerCompany) {
-            companyEl.textContent = partnerCompany;
-            companyEl.style.display = 'block';
-        } else {
-            companyEl.style.display = 'none';
+    // Wszystkie miejsca gdzie wyświetlane jest imię zapraszającego
+    const inviterNameElements = [
+        'appInviterName',           // Mobile welcome card
+        'inviterName',              // Legacy element
+        'ctaInviterName',           // CTA section
+        'modalInviterName',         // Success modal
+        'inviterContactName',       // Mobile contact card
+        'desktopInviterName',       // Desktop hero
+        'desktopInviterCardName'    // Desktop scheduler card
+    ];
+
+    inviterNameElements.forEach(id => {
+        setTextContent(id, params.inviterName);
+    });
+
+    // Rola zapraszającego
+    const inviterRoleElements = [
+        'appInviterRole',
+        'ctaInviterRole',
+        'inviterContactRole',
+        'desktopInviterCardRole'
+    ];
+
+    inviterRoleElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (params.inviterRole) {
+                el.textContent = params.inviterRole;
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
         }
+    });
 
-        // NIP
-        const nipRow = document.getElementById('cardNIPRow');
-        if (partnerNIP) {
-            document.getElementById('cardPartnerNIP').textContent = partnerNIP;
-            nipRow.style.display = 'flex';
-        } else {
-            nipRow.style.display = 'none';
+    // Zdjęcie zapraszającego
+    const inviterPhotoElements = [
+        'appInviterPhoto',
+        'inviterContactPhoto',
+        'desktopInviterPhoto'
+    ];
+
+    const defaultPhoto = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
+
+    inviterPhotoElements.forEach(id => {
+        const img = document.getElementById(id);
+        if (img) {
+            img.src = params.inviterPhoto || defaultPhoto;
+            img.onerror = function() { this.src = defaultPhoto; };
         }
+    });
 
-        // Phone
-        const phoneRow = document.getElementById('cardPhoneRow');
-        if (partnerPhone) {
-            document.getElementById('cardPartnerPhone').textContent = partnerPhone;
-            phoneRow.style.display = 'flex';
+    // Telefon zapraszającego
+    setupContactLink('inviterBtnPhone', 'tel:', params.inviterPhone);
+    setupContactLink('ctaInviterPhoneLink', 'tel:', params.inviterPhone, 'ctaInviterPhone');
+    setupContactLink('desktopInviterPhoneLink', 'tel:', params.inviterPhone, 'desktopInviterCardPhone');
+
+    // Email zapraszającego
+    setupContactLink('inviterBtnEmail', 'mailto:', params.inviterEmail);
+    setupContactLink('ctaInviterEmailLink', 'mailto:', params.inviterEmail, 'ctaInviterEmail');
+    setupContactLink('desktopInviterEmailLink', 'mailto:', params.inviterEmail, 'desktopInviterCardEmail');
+
+    // Kontakty zapraszającego w hero sekcji (mobile)
+    // Phone link (obok roli)
+    const phoneLink = document.getElementById('inviterPhoneLink');
+    if (phoneLink) {
+        if (params.inviterPhone) {
+            phoneLink.href = 'tel:' + params.inviterPhone.replace(/\s/g, '');
+            setTextContent('inviterPhoneText', params.inviterPhone);
+            phoneLink.style.display = 'inline-flex';
         } else {
-            phoneRow.style.display = 'none';
+            phoneLink.style.display = 'none';
         }
+    }
 
-        // Email
-        const emailRow = document.getElementById('cardEmailRow');
-        if (partnerEmail) {
-            document.getElementById('cardPartnerEmail').textContent = partnerEmail;
-            emailRow.style.display = 'flex';
+    // Email link (pod rolą)
+    const emailLink = document.getElementById('inviterEmailLink');
+    if (emailLink) {
+        if (params.inviterEmail) {
+            emailLink.href = 'mailto:' + params.inviterEmail;
+            setTextContent('inviterEmailText', params.inviterEmail);
+            emailLink.style.display = 'inline-flex';
         } else {
-            emailRow.style.display = 'none';
+            emailLink.style.display = 'none';
         }
+    }
 
-        // Address
-        const addressRow = document.getElementById('cardAddressRow');
-        if (partnerAddress) {
-            document.getElementById('cardPartnerAddress').textContent = partnerAddress;
-            addressRow.style.display = 'flex';
+    // Kontakty zapraszającego w hero sekcji (desktop)
+    const desktopInviterContacts = document.getElementById('desktopInviterContacts');
+    if (desktopInviterContacts) {
+        const hasInviterContact = params.inviterPhone || params.inviterEmail;
+        if (hasInviterContact) {
+            desktopInviterContacts.style.display = 'flex';
+
+            // Phone link
+            const phoneLink = document.getElementById('desktopInviterPhoneBadge');
+            if (phoneLink) {
+                if (params.inviterPhone) {
+                    phoneLink.href = 'tel:' + params.inviterPhone.replace(/\s/g, '');
+                    setTextContent('desktopInviterPhoneText', params.inviterPhone);
+                    phoneLink.style.display = 'flex';
+                } else {
+                    phoneLink.style.display = 'none';
+                }
+            }
+
+            // Email link
+            const emailLink = document.getElementById('desktopInviterEmailBadge');
+            if (emailLink) {
+                if (params.inviterEmail) {
+                    emailLink.href = 'mailto:' + params.inviterEmail;
+                    setTextContent('desktopInviterEmailText', params.inviterEmail);
+                    emailLink.style.display = 'flex';
+                } else {
+                    emailLink.style.display = 'none';
+                }
+            }
         } else {
-            addressRow.style.display = 'none';
+            desktopInviterContacts.style.display = 'none';
+        }
+    }
+
+    // Bio zapraszającego
+    const bioElements = ['inviterContactBio', 'ctaInviterBio', 'desktopInviterCardBio'];
+    bioElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (params.inviterBio) {
+                el.textContent = params.inviterBio;
+                el.style.display = '';
+            } else {
+                el.style.display = 'none';
+            }
+        }
+    });
+
+    // Zapisz numer do przycisku w headerze
+    window.inviterPhoneNumber = params.inviterPhone;
+
+    // ========== AKTUALIZACJA TYTUŁU STRONY ==========
+    if (params.partnerName && params.inviterName) {
+        document.title = `${params.partnerName}, zaproszenie od ${params.inviterName} | posrednik.app`;
+    }
+
+    // ========== PARTNER BUSINESS CARD ==========
+    populatePartnerBusinessCard(params);
+
+    console.log('Personalizacja zakończona:', params);
+}
+
+function populatePartnerBusinessCard(params) {
+    // Sprawdź czy mamy dane partnera do wyświetlenia (przynajmniej firma lub szczegóły kontaktowe)
+    const hasBusinessData = params.partnerCompany || params.partnerNIP ||
+                            params.partnerPhone || params.partnerEmail || params.partnerAddress;
+
+    const fullName = params.partnerFullName || params.partnerName || 'Partner';
+    const initials = generateInitials(fullName);
+
+    // ========== MOBILE VERSION ==========
+    const mobileSection = document.getElementById('partnerBusinessCard');
+    if (mobileSection) {
+        if (!hasBusinessData) {
+            mobileSection.style.display = 'none';
+        } else {
+            mobileSection.style.display = 'block';
+
+            setTextContent('partnerCardName', fullName);
+            setTextContent('partnerAvatarInitials', initials);
+
+            // Firma
+            const companyRow = document.getElementById('partnerCardCompany');
+            if (companyRow) {
+                if (params.partnerCompany) {
+                    companyRow.style.display = '';
+                    setTextContent('partnerCardCompanyName', params.partnerCompany);
+                } else {
+                    companyRow.style.display = 'none';
+                }
+            }
+
+            // Szczegóły
+            toggleDetailRow('partnerCardNipRow', 'partnerCardNip', params.partnerNIP);
+            toggleDetailRow('partnerCardPhoneRow', 'partnerCardPhone', params.partnerPhone);
+            toggleDetailRow('partnerCardEmailRow', 'partnerCardEmail', params.partnerEmail);
+            toggleDetailRow('partnerCardAddressRow', 'partnerCardAddress', params.partnerAddress);
+
+            // Ukryj siatkę szczegółów jeśli nie ma żadnych danych
+            const detailsGrid = mobileSection.querySelector('.for-details-grid');
+            if (detailsGrid) {
+                const hasAnyDetail = params.partnerNIP || params.partnerPhone ||
+                                     params.partnerEmail || params.partnerAddress;
+                detailsGrid.style.display = hasAnyDetail ? 'grid' : 'none';
+            }
+        }
+    }
+
+    // ========== DESKTOP VERSION ==========
+    const desktopCard = document.getElementById('desktopPartnerCard');
+    if (desktopCard) {
+        if (!hasBusinessData) {
+            desktopCard.style.display = 'none';
+        } else {
+            desktopCard.style.display = 'block';
+
+            setTextContent('desktopPartnerFullName', fullName);
+            setTextContent('desktopPartnerInitials', initials);
+
+            // Firma
+            const companyRow = document.getElementById('desktopPartnerCompanyRow');
+            if (companyRow) {
+                if (params.partnerCompany) {
+                    companyRow.style.display = '';
+                    setTextContent('desktopPartnerCompany', params.partnerCompany);
+                } else {
+                    companyRow.style.display = 'none';
+                }
+            }
+
+            // Szczegóły
+            toggleDetailRow('desktopPartnerNipRow', 'desktopPartnerNip', params.partnerNIP);
+            toggleDetailRow('desktopPartnerPhoneRow', 'desktopPartnerPhone', params.partnerPhone);
+            toggleDetailRow('desktopPartnerEmailRow', 'desktopPartnerEmail', params.partnerEmail);
+            toggleDetailRow('desktopPartnerAddressRow', 'desktopPartnerAddress', params.partnerAddress);
+
+            // Ukryj siatkę szczegółów jeśli nie ma żadnych danych
+            const detailsGrid = desktopCard.querySelector('.dpc-details');
+            if (detailsGrid) {
+                const hasAnyDetail = params.partnerNIP || params.partnerPhone ||
+                                     params.partnerEmail || params.partnerAddress;
+                detailsGrid.style.display = hasAnyDetail ? 'grid' : 'none';
+            }
+        }
+    }
+}
+
+function generateInitials(name) {
+    if (!name) return '?';
+
+    const words = name.trim().split(/\s+/);
+    if (words.length >= 2) {
+        return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+    return words[0].substring(0, 2).toUpperCase();
+}
+
+function toggleDetailRow(rowId, valueId, value) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        if (value) {
+            row.style.display = '';
+            setTextContent(valueId, value);
+        } else {
+            row.style.display = 'none';
+        }
+    }
+}
+
+// Pomocnicze funkcje
+function setTextContent(elementId, text) {
+    const el = document.getElementById(elementId);
+    if (el && text) {
+        el.textContent = text;
+    }
+}
+
+function setupContactLink(linkId, prefix, value, textId) {
+    const link = document.getElementById(linkId);
+    if (link) {
+        if (value) {
+            link.href = prefix + value.replace(/\s/g, '');
+            link.style.display = '';
+            if (textId) {
+                setTextContent(textId, value);
+            }
+        } else {
+            link.style.display = 'none';
         }
     }
 }
@@ -598,16 +1128,49 @@ function initCalculator() {
     const clientsSlider = document.getElementById('calcClients');
     const valueSlider = document.getElementById('calcValue');
     const tierSlider = document.getElementById('calcTier');
+    const tierSelector = document.getElementById('tierSelector');
+    const tierInfoBar = document.getElementById('tierInfoBar');
+
+    // Exit if required elements don't exist
+    if (!clientsSlider || !valueSlider || !tierSlider) return;
+
+    // Tier info mapping
+    const tierInfo = {
+        10: { name: 'Start', req: 'Każdy nowy partner' },
+        15: { name: 'Brązowy', req: '3+ klientów' },
+        20: { name: 'Srebrny', req: '10+ klientów' },
+        25: { name: 'Złoty', req: '25+ klientów' },
+        35: { name: 'Platynowy', req: '50+ klientów' }
+    };
+
+    // Update slider progress color
+    function updateSliderProgress(slider) {
+        if (!slider) return;
+        const min = parseFloat(slider.min) || 0;
+        const max = parseFloat(slider.max) || 100;
+        const val = parseFloat(slider.value) || 0;
+        const percent = ((val - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(to right, #667eea 0%, #667eea ${percent}%, #e2e8f0 ${percent}%, #e2e8f0 100%)`;
+    }
 
     function updateCalculator() {
-        const clients = parseInt(clientsSlider.value);
-        const avgValue = parseInt(valueSlider.value);
-        const tierPercent = parseInt(tierSlider.value);
+        const clients = parseInt(clientsSlider.value) || 0;
+        const avgValue = parseInt(valueSlider.value) || 0;
+        const tierPercent = parseInt(tierSlider.value) || 20;
+
+        // Update slider progress
+        updateSliderProgress(clientsSlider);
+        updateSliderProgress(valueSlider);
 
         // Update display values
-        document.getElementById('calcClientsValue').textContent = clients;
-        document.getElementById('calcValueDisplay').textContent = avgValue.toLocaleString('pl-PL');
-        document.getElementById('calcTierValue').textContent = tierPercent;
+        const calcClientsValueEl = document.getElementById('calcClientsValue');
+        const calcValueDisplayEl = document.getElementById('calcValueDisplay');
+        if (calcClientsValueEl) calcClientsValueEl.textContent = clients;
+        if (calcValueDisplayEl) calcValueDisplayEl.textContent = avgValue.toLocaleString('pl-PL');
+
+        // Update tier value display if exists (legacy)
+        const tierValueEl = document.getElementById('calcTierValue');
+        if (tierValueEl) tierValueEl.textContent = tierPercent;
 
         // Calculate earnings
         const monthlyCommission = clients * avgValue * (tierPercent / 100);
@@ -615,17 +1178,48 @@ function initCalculator() {
         const yearlyCommission = monthlyCommission * 12;
 
         // Update results
-        document.getElementById('resultMonthly').textContent = formatCurrency(monthlyCommission);
-        document.getElementById('resultQuarterly').textContent = formatCurrency(quarterlyCommission);
-        document.getElementById('resultYearly').textContent = formatCurrency(yearlyCommission);
+        const resultMonthlyEl = document.getElementById('resultMonthly');
+        const resultQuarterlyEl = document.getElementById('resultQuarterly');
+        const resultYearlyEl = document.getElementById('resultYearly');
+        if (resultMonthlyEl) resultMonthlyEl.textContent = formatCurrency(monthlyCommission);
+        if (resultQuarterlyEl) resultQuarterlyEl.textContent = formatCurrency(quarterlyCommission);
+        if (resultYearlyEl) resultYearlyEl.textContent = formatCurrency(yearlyCommission);
+
+        // Update tier info bar
+        if (tierInfoBar && tierInfo[tierPercent]) {
+            const info = tierInfo[tierPercent];
+            tierInfoBar.innerHTML = `<span class="tier-info-text"><strong>${info.name}</strong> — ${info.req}</span>`;
+        }
 
         // Update projection chart
         updateProjectionChart(clients, avgValue, tierPercent);
     }
 
+    // Tier button click handler
+    if (tierSelector) {
+        const tierBtns = tierSelector.querySelectorAll('.tier-btn');
+        tierBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active from all
+                tierBtns.forEach(b => b.classList.remove('active'));
+                // Add active to clicked
+                this.classList.add('active');
+                // Update hidden input
+                const tierValue = this.getAttribute('data-tier');
+                tierSlider.value = tierValue;
+                // Recalculate
+                updateCalculator();
+            });
+        });
+    }
+
     clientsSlider.addEventListener('input', updateCalculator);
     valueSlider.addEventListener('input', updateCalculator);
-    tierSlider.addEventListener('input', updateCalculator);
+
+    // Legacy: if tierSlider is a range input, listen to it
+    if (tierSlider && tierSlider.type === 'range') {
+        tierSlider.addEventListener('input', updateCalculator);
+    }
 
     // Initial calculation
     updateCalculator();
@@ -740,10 +1334,14 @@ function updateProjectionChart(baseClients, avgValue, baseTier) {
     updateBreakdownCard(2, year2, year1.cumulativeEarnings);
     updateBreakdownCard(5, year5, projections[3].cumulativeEarnings);
 
-    // Update summary stats
-    document.getElementById('summaryTotal5Year').textContent = formatCurrency(year5.cumulativeEarnings);
-    document.getElementById('summaryAvgMonthly').textContent = formatCurrency(year5.cumulativeEarnings / 60);
-    document.getElementById('summaryTotalClients').textContent = year5.cumulativeClients.toLocaleString('pl-PL');
+    // Update summary stats (with null checks)
+    const summaryTotal = document.getElementById('summaryTotal5Year');
+    const summaryAvg = document.getElementById('summaryAvgMonthly');
+    const summaryClients = document.getElementById('summaryTotalClients');
+
+    if (summaryTotal) summaryTotal.textContent = formatCurrency(year5.cumulativeEarnings);
+    if (summaryAvg) summaryAvg.textContent = formatCurrency(year5.cumulativeEarnings / 60);
+    if (summaryClients) summaryClients.textContent = year5.cumulativeClients.toLocaleString('pl-PL');
 }
 
 function updateChartBar(year, cumulativeValue, maxValue, totalClients, previousValue = 0) {
@@ -824,20 +1422,27 @@ function initMeetingScheduler() {
     // Generate date options
     generateDateOptions();
 
-    // Setup date navigation
-    document.getElementById('datePrev').addEventListener('click', () => {
-        if (schedulerState.dateOffset > 0) {
-            schedulerState.dateOffset -= 5;
-            generateDateOptions();
-        }
-    });
+    // Setup date navigation (with null checks)
+    const datePrev = document.getElementById('datePrev');
+    const dateNext = document.getElementById('dateNext');
 
-    document.getElementById('dateNext').addEventListener('click', () => {
-        if (schedulerState.dateOffset < 9) {
-            schedulerState.dateOffset += 5;
-            generateDateOptions();
-        }
-    });
+    if (datePrev) {
+        datePrev.addEventListener('click', () => {
+            if (schedulerState.dateOffset > 0) {
+                schedulerState.dateOffset -= 5;
+                generateDateOptions();
+            }
+        });
+    }
+
+    if (dateNext) {
+        dateNext.addEventListener('click', () => {
+            if (schedulerState.dateOffset < 9) {
+                schedulerState.dateOffset += 5;
+                generateDateOptions();
+            }
+        });
+    }
 
     // Setup contact method selector
     const methodOptions = document.querySelectorAll('.method-option');
@@ -861,12 +1466,14 @@ function initMeetingScheduler() {
         });
     });
 
-    // Setup form submission
-    document.getElementById('meetingForm').addEventListener('submit', handleMeetingSchedule);
+    // Note: Form submission is handled by handleMobileScheduleSubmit in initBottomSheet
+    // Don't add duplicate listener here
 }
 
 function generateDateOptions() {
     const dateList = document.getElementById('dateList');
+    if (!dateList) return; // Exit if element doesn't exist
+
     const today = new Date();
     const dayNames = ['ND', 'PN', 'WT', 'ŚR', 'CZ', 'PT', 'SB'];
     const monthNames = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
@@ -910,9 +1517,11 @@ function generateDateOptions() {
         daysAdded++;
     }
 
-    // Update navigation buttons
-    document.getElementById('datePrev').disabled = schedulerState.dateOffset === 0;
-    document.getElementById('dateNext').disabled = schedulerState.dateOffset >= 15;
+    // Update navigation buttons (with null checks)
+    const datePrev = document.getElementById('datePrev');
+    const dateNext = document.getElementById('dateNext');
+    if (datePrev) datePrev.disabled = schedulerState.dateOffset === 0;
+    if (dateNext) dateNext.disabled = schedulerState.dateOffset >= 15;
 }
 
 function updateSchedulerSummary() {
@@ -926,23 +1535,24 @@ function updateSchedulerSummary() {
         const monthNames = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
 
         const formattedDate = `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]}`;
-        dateTimeEl.textContent = `${formattedDate}, godz. ${schedulerState.selectedTime}`;
+        if (dateTimeEl) dateTimeEl.textContent = `${formattedDate}, godz. ${schedulerState.selectedTime}`;
 
-        summary.classList.add('ready');
+        if (summary) summary.classList.add('ready');
     } else {
-        dateTimeEl.textContent = '-';
-        summary.classList.remove('ready');
+        if (dateTimeEl) dateTimeEl.textContent = '-';
+        if (summary) summary.classList.remove('ready');
     }
 
     const methodIcon = schedulerState.selectedMethod === 'phone' ? '📞' : '🎥';
     const methodText = schedulerState.selectedMethod === 'phone' ? 'Rozmowa telefoniczna' : 'Video rozmowa';
-    methodEl.textContent = `${methodIcon} ${methodText}`;
+    if (methodEl) methodEl.textContent = `${methodIcon} ${methodText}`;
 
     updateScheduleButton();
 }
 
 function updateScheduleButton() {
     const btn = document.getElementById('btnSchedule');
+    if (!btn) return;
 
     const isReady = schedulerState.selectedDate && schedulerState.selectedTime;
 
@@ -1051,7 +1661,11 @@ function updateInvitationStatus(invitationId, status) {
 }
 
 function closeModal() {
-    document.getElementById('successModal').classList.remove('active');
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
 }
 
 // ============ UTILITIES ============
@@ -1087,21 +1701,29 @@ function initSettings() {
     loadInviters();
 
     // Open/Close settings
-    document.getElementById('btnOpenSettings').addEventListener('click', openSettings);
-    document.getElementById('btnCloseSettings').addEventListener('click', closeSettings);
+    const btnOpen = document.getElementById('btnOpenSettings');
+    const btnClose = document.getElementById('btnCloseSettings');
+    const modal = document.getElementById('settingsModal');
+    const addForm = document.getElementById('addInviterForm');
+    const editForm = document.getElementById('editInviterForm');
+
+    if (btnOpen) btnOpen.addEventListener('click', openSettings);
+    if (btnClose) btnClose.addEventListener('click', closeSettings);
 
     // Close settings on backdrop click
-    document.getElementById('settingsModal').addEventListener('click', (e) => {
-        if (e.target.id === 'settingsModal') {
-            closeSettings();
-        }
-    });
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettings();
+            }
+        });
+    }
 
     // Add inviter form
-    document.getElementById('addInviterForm').addEventListener('submit', handleAddInviter);
+    if (addForm) addForm.addEventListener('submit', handleAddInviter);
 
     // Edit inviter form
-    document.getElementById('editInviterForm').addEventListener('submit', handleEditInviter);
+    if (editForm) editForm.addEventListener('submit', handleEditInviter);
 
     // Render inviters list
     renderInvitersList();
@@ -1280,6 +1902,7 @@ function deleteInviter(id) {
 
 function renderInvitersList() {
     const container = document.getElementById('invitersList');
+    if (!container) return;
 
     if (InvitersState.inviters.length === 0) {
         container.innerHTML = `
@@ -1321,6 +1944,8 @@ function renderInvitersList() {
 
 function updateInviterSelect() {
     const select = document.getElementById('inviterSelect');
+    if (!select) return;
+
     const currentValue = select.value;
 
     // Clear existing options except the placeholder
@@ -1360,6 +1985,8 @@ function generateLinkWithInviterDetails(partnerData, inviterKey, invitationId) {
     // Add inviter details
     const inviter = InvitersState.inviters.find(inv => inv.key === inviterKey);
     if (inviter) {
+        // WAŻNE: Dodaj pełne imię zapraszającego
+        params.set('zn', inviter.name);
         if (inviter.phone) params.set('zp', inviter.phone);
         if (inviter.email) params.set('ze', inviter.email);
         if (inviter.role) params.set('zr', inviter.role);
@@ -1380,83 +2007,7 @@ initGenerator = function() {
     initSettings();
 };
 
-// ============ LANDING PAGE INVITER DISPLAY ============
-function displayInviterOnLanding() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviterName = urlParams.get('z') || 'Partner';
-    const inviterPhone = urlParams.get('zp') || '';
-    const inviterEmail = urlParams.get('ze') || '';
-    const inviterRole = urlParams.get('zr') || '';
-    const inviterBio = urlParams.get('zb') || '';
-    const inviterPhoto = urlParams.get('zph') || '';
-
-    // Get inviter info from CONFIG (fallback)
-    const inviterInfo = CONFIG.inviters[inviterName] || {};
-
-    // Use URL params first, then CONFIG fallback
-    const finalPhone = inviterPhone || inviterInfo.phone || '';
-    const finalEmail = inviterEmail || inviterInfo.email || '';
-    const finalRole = inviterRole || inviterInfo.role || '';
-    const finalBio = inviterBio || inviterInfo.bio || '';
-    const finalPhoto = inviterPhoto || inviterInfo.photo || '';
-    const finalName = inviterInfo.name || inviterName;
-
-    // Update inviter card
-    const inviterCard = document.getElementById('inviterCard');
-    const inviterPhotoEl = document.getElementById('inviterPhoto');
-    const ctaInviterName = document.getElementById('ctaInviterName');
-    const ctaInviterRole = document.getElementById('ctaInviterRole');
-    const ctaInviterPhone = document.getElementById('ctaInviterPhone');
-    const ctaInviterPhoneLink = document.getElementById('ctaInviterPhoneLink');
-    const ctaInviterEmail = document.getElementById('ctaInviterEmail');
-    const ctaInviterEmailLink = document.getElementById('ctaInviterEmailLink');
-    const ctaInviterBio = document.getElementById('ctaInviterBio');
-
-    if (ctaInviterName) {
-        ctaInviterName.textContent = finalName;
-    }
-
-    if (ctaInviterRole && finalRole) {
-        ctaInviterRole.textContent = finalRole;
-        ctaInviterRole.style.display = 'block';
-    }
-
-    if (finalPhoto && inviterPhotoEl) {
-        inviterPhotoEl.src = finalPhoto;
-        inviterPhotoEl.onerror = function() {
-            this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
-        };
-    }
-
-    if (finalPhone && ctaInviterPhone && ctaInviterPhoneLink) {
-        ctaInviterPhone.textContent = finalPhone;
-        ctaInviterPhoneLink.href = `tel:${finalPhone.replace(/\s/g, '')}`;
-        ctaInviterPhoneLink.style.display = 'flex';
-    }
-
-    if (finalEmail && ctaInviterEmail && ctaInviterEmailLink) {
-        ctaInviterEmail.textContent = finalEmail;
-        ctaInviterEmailLink.href = `mailto:${finalEmail}`;
-        ctaInviterEmailLink.style.display = 'flex';
-    }
-
-    if (finalBio && ctaInviterBio) {
-        ctaInviterBio.textContent = finalBio;
-        ctaInviterBio.style.display = 'block';
-    }
-
-    // Show card if we have any details
-    if (inviterCard && (finalPhone || finalEmail || finalBio || finalRole)) {
-        inviterCard.style.display = 'flex';
-    }
-}
-
-// Extend initLanding to display inviter
-const originalInitLanding = initLanding;
-initLanding = function() {
-    originalInitLanding();
-    displayInviterOnLanding();
-};
+// Personalizacja jest teraz obsługiwana centralnie przez personalizeContent()
 
 // Global functions for onclick handlers
 window.copyInvitationLink = copyInvitationLink;
@@ -1495,11 +2046,149 @@ function initMobileApp() {
     // Initialize calculator sliders for mobile
     initMobileCalculator();
 
-    // Update inviter info in mobile elements
-    updateMobileInviterInfo();
-
     // Setup header call button
     setupHeaderCallButton();
+
+    // Check for existing meeting and update UI
+    updateMeetingConfirmedUI();
+}
+
+function getExistingMeetingForInvitation() {
+    const meetings = JSON.parse(localStorage.getItem('scheduledMeetings') || '[]');
+    if (meetings.length === 0) return null;
+
+    const invitationId = AppState.landingParams.invitationId;
+    const partnerName = AppState.landingParams.partnerName;
+    const partnerPhone = AppState.landingParams.partnerPhone;
+    const inviterName = AppState.landingParams.inviterName;
+
+    // First try to find by invitationId if available
+    if (invitationId) {
+        const byId = meetings.find(m => m.invitationId === invitationId);
+        if (byId) return byId;
+    }
+
+    // Fallback: find by partner name + phone + inviter combination
+    if (partnerName) {
+        const byPartner = meetings.find(m =>
+            m.partnerName === partnerName &&
+            (m.partnerPhone === partnerPhone || !partnerPhone) &&
+            (m.inviterName === inviterName || !inviterName)
+        );
+        if (byPartner) return byPartner;
+    }
+
+    return null;
+}
+
+function formatMeetingDateForDisplay(meeting) {
+    const date = new Date(meeting.date);
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    const monthNames = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+    return `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]}`;
+}
+
+function updateMeetingConfirmedUI(meeting = null) {
+    const existing = meeting || getExistingMeetingForInvitation();
+
+    // Mobile bottom bar elements
+    const mobileBar = document.getElementById('mobileBottomBar');
+    const mobileTitle = document.getElementById('mobileBarTitle');
+    const mobileSubtitle = document.getElementById('mobileBarSubtitle');
+    const mobileIcon = document.getElementById('mobileBarIcon');
+    const mobileBtnText = document.getElementById('mobileBarBtnText');
+
+    // Desktop elements
+    const desktopConfirmed = document.getElementById('desktopMeetingConfirmed');
+    const desktopForm = document.getElementById('desktopMeetingForm');
+    const desktopDate = document.getElementById('desktopConfirmedDate');
+    const desktopMethod = document.getElementById('desktopConfirmedMethod');
+    const btnChangeDesktop = document.getElementById('btnChangeDesktopMeeting');
+
+    if (existing) {
+        const formattedDate = formatMeetingDateForDisplay(existing);
+        const methodIcon = existing.method === 'phone' ? '📞' : '🎥';
+        const methodText = existing.method === 'phone' ? 'Rozmowa telefoniczna' : 'Video rozmowa';
+
+        // Update mobile bottom bar
+        if (mobileBar) mobileBar.classList.add('confirmed');
+        if (mobileTitle) mobileTitle.textContent = 'Umówione spotkanie';
+        if (mobileSubtitle) mobileSubtitle.textContent = `${formattedDate}, ${existing.time}`;
+        if (mobileIcon) mobileIcon.textContent = '✏️';
+        if (mobileBtnText) mobileBtnText.textContent = 'Zmień';
+
+        // Update desktop panel
+        if (desktopConfirmed) {
+            desktopConfirmed.style.display = 'block';
+        }
+        if (desktopForm) {
+            desktopForm.style.display = 'none';
+        }
+        if (desktopDate) {
+            desktopDate.textContent = `📅 ${formattedDate}, godz. ${existing.time}`;
+        }
+        if (desktopMethod) {
+            desktopMethod.innerHTML = `${methodIcon} ${methodText}`;
+        }
+
+        // Setup change button
+        if (btnChangeDesktop) {
+            btnChangeDesktop.onclick = () => {
+                if (desktopConfirmed) desktopConfirmed.style.display = 'none';
+                if (desktopForm) desktopForm.style.display = 'block';
+                showDesktopExistingMeetingBanner();
+            };
+        }
+    } else {
+        // Reset to default state
+        if (mobileBar) mobileBar.classList.remove('confirmed');
+        if (mobileTitle) mobileTitle.textContent = 'Gotowy na współpracę?';
+        if (mobileSubtitle) mobileSubtitle.textContent = 'Umów bezpłatną rozmowę';
+        if (mobileIcon) mobileIcon.textContent = '📅';
+        if (mobileBtnText) mobileBtnText.textContent = 'Umów się';
+
+        if (desktopConfirmed) desktopConfirmed.style.display = 'none';
+        if (desktopForm) desktopForm.style.display = 'block';
+    }
+}
+
+function showExistingMeetingBanner() {
+    const banner = document.getElementById('existingMeetingBanner');
+    const detailsEl = document.getElementById('existingMeetingDetails');
+
+    if (!banner || !detailsEl) return;
+
+    const existing = getExistingMeetingForInvitation();
+
+    if (existing) {
+        // Store existing meeting ID for later update
+        mobileAppState.existingMeetingId = existing.id;
+
+        // Format the date for display
+        const date = new Date(existing.date);
+        const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+        const methodIcon = existing.method === 'phone' ? '📞' : '🎥';
+        const formattedDate = `${dayNames[date.getDay()]}, ${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')} o ${existing.time}`;
+
+        detailsEl.textContent = `${methodIcon} ${formattedDate}`;
+        banner.style.display = 'flex';
+
+        // Pre-select the existing method
+        const methodRadio = document.querySelector(`input[name="contactMethod"][value="${existing.method}"]`);
+        if (methodRadio) {
+            methodRadio.checked = true;
+            methodRadio.closest('.method-toggle-option')?.classList.add('active');
+            document.querySelectorAll('.method-toggle-option').forEach(opt => {
+                if (opt !== methodRadio.closest('.method-toggle-option')) {
+                    opt.classList.remove('active');
+                }
+            });
+            mobileAppState.selectedMethod = existing.method;
+        }
+    } else {
+        mobileAppState.existingMeetingId = null;
+        banner.style.display = 'none';
+    }
 }
 
 function initBottomSheet() {
@@ -1511,6 +2200,9 @@ function initBottomSheet() {
     if (!overlay || !sheet || !openBtn) return;
 
     openBtn.addEventListener('click', () => {
+        // Check for existing meeting before showing
+        showExistingMeetingBanner();
+
         overlay.classList.add('active');
         sheet.classList.add('active');
         document.body.style.overflow = 'hidden';
@@ -1661,23 +2353,32 @@ function handleMobileScheduleSubmit(e) {
     const monthNames = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca', 'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
     const formattedDate = `${dayNames[date.getDay()]}, ${date.getDate()} ${monthNames[date.getMonth()]}`;
 
+    const isUpdate = !!mobileAppState.existingMeetingId;
+
     const meeting = {
-        name,
-        phone,
-        email,
+        id: isUpdate ? mobileAppState.existingMeetingId : 'meeting_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        partnerName: name,
+        partnerPhone: phone,
+        partnerEmail: email,
         date: mobileAppState.selectedDate,
         time: mobileAppState.selectedTime,
         method: mobileAppState.selectedMethod,
         formattedDateTime: `${formattedDate}, godz. ${mobileAppState.selectedTime}`,
-        invitedBy: AppState.landingParams.inviterName,
+        inviterName: AppState.landingParams.inviterName,
         invitationId: AppState.landingParams.invitationId,
         scheduledAt: new Date().toISOString()
     };
 
-    // Save to localStorage
-    const meetings = JSON.parse(localStorage.getItem('recruiter_meetings') || '[]');
+    // Save to localStorage (scheduledMeetings - shared with calendar)
+    let meetings = JSON.parse(localStorage.getItem('scheduledMeetings') || '[]');
+
+    if (isUpdate) {
+        // Update existing meeting - remove old one and add updated
+        meetings = meetings.filter(m => m.id !== mobileAppState.existingMeetingId);
+    }
+
     meetings.push(meeting);
-    localStorage.setItem('recruiter_meetings', JSON.stringify(meetings));
+    localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
 
     // Update invitation status
     if (AppState.landingParams.invitationId) {
@@ -1697,7 +2398,11 @@ function handleMobileScheduleSubmit(e) {
     if (modalMethodText) modalMethodText.textContent = mobileAppState.selectedMethod === 'phone' ? 'Rozmowa telefoniczna' : 'Video rozmowa';
 
     document.getElementById('successModal').classList.add('active');
-    showToast('Spotkanie umówione!', 'success');
+
+    // Update the bottom bar to show confirmed state
+    updateMeetingConfirmedUI(meeting);
+
+    showToast(isUpdate ? 'Termin spotkania zmieniony!' : 'Spotkanie umówione!', 'success');
 }
 
 function initServicesCarousel() {
@@ -1752,88 +2457,7 @@ function initMobileCalculator() {
     });
 }
 
-function updateMobileInviterInfo() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviterKey = urlParams.get('z') || 'Partner';
-    const inviterPhone = urlParams.get('zp') || '';
-    const inviterEmail = urlParams.get('ze') || '';
-    const inviterRole = urlParams.get('zr') || '';
-    const inviterBio = urlParams.get('zb') || '';
-    const inviterPhoto = urlParams.get('zph') || '';
-
-    const inviterInfo = CONFIG.inviters[inviterKey] || {};
-
-    const finalPhone = inviterPhone || inviterInfo.phone || '';
-    const finalEmail = inviterEmail || inviterInfo.email || '';
-    const finalRole = inviterRole || inviterInfo.role || '';
-    const finalBio = inviterBio || inviterInfo.bio || '';
-    const finalPhoto = inviterPhoto || inviterInfo.photo || '';
-    const finalName = inviterInfo.name || inviterKey;
-
-    // Update welcome card
-    const appInviterName = document.getElementById('appInviterName');
-    const appInviterRole = document.getElementById('appInviterRole');
-    const appInviterPhoto = document.getElementById('appInviterPhoto');
-
-    if (appInviterName) appInviterName.textContent = finalName;
-    if (appInviterRole && finalRole) {
-        appInviterRole.textContent = finalRole;
-        appInviterRole.style.display = 'block';
-    }
-    if (appInviterPhoto && finalPhoto) {
-        appInviterPhoto.src = finalPhoto;
-        appInviterPhoto.onerror = function() {
-            this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
-        };
-    }
-
-    // Update inviter contact card
-    const inviterContactName = document.getElementById('inviterContactName');
-    const inviterContactRole = document.getElementById('inviterContactRole');
-    const inviterContactPhoto = document.getElementById('inviterContactPhoto');
-    const inviterContactBio = document.getElementById('inviterContactBio');
-    const inviterBtnPhone = document.getElementById('inviterBtnPhone');
-    const inviterBtnEmail = document.getElementById('inviterBtnEmail');
-
-    if (inviterContactName) inviterContactName.textContent = finalName;
-    if (inviterContactRole && finalRole) {
-        inviterContactRole.textContent = finalRole;
-        inviterContactRole.style.display = 'block';
-    }
-    if (inviterContactPhoto && finalPhoto) {
-        inviterContactPhoto.src = finalPhoto;
-        inviterContactPhoto.onerror = function() {
-            this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
-        };
-    }
-    if (inviterContactBio && finalBio) {
-        inviterContactBio.textContent = finalBio;
-        inviterContactBio.style.display = 'block';
-    }
-    if (inviterBtnPhone) {
-        if (finalPhone) {
-            inviterBtnPhone.href = `tel:${finalPhone.replace(/\s/g, '')}`;
-            inviterBtnPhone.style.display = 'flex';
-        } else {
-            inviterBtnPhone.style.display = 'none';
-        }
-    }
-    if (inviterBtnEmail) {
-        if (finalEmail) {
-            inviterBtnEmail.href = `mailto:${finalEmail}`;
-            inviterBtnEmail.style.display = 'flex';
-        } else {
-            inviterBtnEmail.style.display = 'none';
-        }
-    }
-
-    // Update success modal inviter name
-    const modalInviterName = document.getElementById('modalInviterName');
-    if (modalInviterName) modalInviterName.textContent = finalName;
-
-    // Store phone for header button
-    window.inviterPhoneNumber = finalPhone;
-}
+// updateMobileInviterInfo - usunięta, personalizacja przez personalizeContent()
 
 function setupHeaderCallButton() {
     const callBtn = document.getElementById('btnCallInviter');
@@ -1855,13 +2479,53 @@ let desktopSchedulerState = {
     selectedDate: null,
     selectedTime: null,
     selectedMethod: 'phone',
-    dateOffset: 0
+    dateOffset: 0,
+    existingMeetingId: null
 };
+
+function showDesktopExistingMeetingBanner() {
+    const banner = document.getElementById('desktopExistingMeetingBanner');
+    const detailsEl = document.getElementById('desktopExistingMeetingDetails');
+
+    if (!banner || !detailsEl) return;
+
+    const existing = getExistingMeetingForInvitation();
+
+    if (existing) {
+        // Store existing meeting ID for later update
+        desktopSchedulerState.existingMeetingId = existing.id;
+
+        // Format the date for display
+        const date = new Date(existing.date);
+        const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+        const methodIcon = existing.method === 'phone' ? '📞' : '🎥';
+        const formattedDate = `${dayNames[date.getDay()]}, ${date.getDate()}.${(date.getMonth() + 1).toString().padStart(2, '0')} o ${existing.time}`;
+
+        detailsEl.textContent = `${methodIcon} ${formattedDate}`;
+        banner.style.display = 'flex';
+
+        // Pre-select the existing method
+        const methodRadio = document.querySelector(`input[name="desktopContactMethod"][value="${existing.method}"]`);
+        if (methodRadio) {
+            methodRadio.checked = true;
+            document.querySelectorAll('.method-option').forEach(opt => {
+                opt.classList.toggle('active', opt.contains(methodRadio));
+            });
+            desktopSchedulerState.selectedMethod = existing.method;
+        }
+    } else {
+        desktopSchedulerState.existingMeetingId = null;
+        banner.style.display = 'none';
+    }
+}
 
 function initDesktopScheduler() {
     initDesktopDatePicker();
     initDesktopTimeSlots();
     initDesktopMethodSelector();
+
+    // Check for existing meetings
+    showDesktopExistingMeetingBanner();
 
     const form = document.getElementById('desktopMeetingForm');
     if (form) {
@@ -2017,7 +2681,7 @@ function updateDesktopSummary() {
 function handleDesktopScheduleSubmit(e) {
     e.preventDefault();
 
-    const { selectedDate, selectedTime, selectedMethod } = desktopSchedulerState;
+    const { selectedDate, selectedTime, selectedMethod, existingMeetingId } = desktopSchedulerState;
 
     if (!selectedDate || !selectedTime) {
         showToast('Wybierz datę i godzinę', 'error');
@@ -2025,20 +2689,28 @@ function handleDesktopScheduleSubmit(e) {
     }
 
     const urlParams = new URLSearchParams(window.location.search);
+    const isUpdate = !!existingMeetingId;
 
     const meeting = {
-        id: Date.now(),
+        id: isUpdate ? existingMeetingId : 'meeting_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
         date: selectedDate,
         time: selectedTime,
         method: selectedMethod,
         partnerName: urlParams.get('n') || 'Partner',
         partnerPhone: urlParams.get('p') || '',
         partnerEmail: urlParams.get('e') || '',
-        inviter: urlParams.get('z') || 'Nieznany',
-        createdAt: new Date().toISOString()
+        inviterName: urlParams.get('z') || 'Nieznany',
+        invitationId: AppState.landingParams.invitationId,
+        scheduledAt: new Date().toISOString()
     };
 
-    const meetings = JSON.parse(localStorage.getItem('scheduledMeetings') || '[]');
+    let meetings = JSON.parse(localStorage.getItem('scheduledMeetings') || '[]');
+
+    if (isUpdate) {
+        // Update existing meeting - remove old one and add updated
+        meetings = meetings.filter(m => m.id !== existingMeetingId);
+    }
+
     meetings.push(meeting);
     localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
 
@@ -2065,19 +2737,32 @@ function handleDesktopScheduleSubmit(e) {
         successModal.style.display = 'flex';
     }
 
-    showToast('Spotkanie umówione!', 'success');
+    // Update UI to show confirmed state
+    updateMeetingConfirmedUI(meeting);
+
+    showToast(isUpdate ? 'Termin spotkania zmieniony!' : 'Spotkanie umówione!', 'success');
 }
 
 function initDesktopCalculator() {
+    console.log('initDesktopCalculator called');
+
     const clientsSlider = document.getElementById('desktopCalcClients');
     const valueSlider = document.getElementById('desktopCalcValue');
-    const tierSlider = document.getElementById('desktopCalcTier');
+    const tierInput = document.getElementById('desktopCalcTier');
+    const tierSelector = document.getElementById('desktopTierSelector');
 
-    if (!clientsSlider || !valueSlider || !tierSlider) return;
+    console.log('clientsSlider:', clientsSlider);
+    console.log('valueSlider:', valueSlider);
+    console.log('tierInput:', tierInput);
+    console.log('tierSelector:', tierSelector);
+
+    if (!clientsSlider || !valueSlider || !tierInput) {
+        console.log('Desktop calculator elements not found, skipping init');
+        return;
+    }
 
     const clientsValue = document.getElementById('desktopCalcClientsValue');
     const valueDisplay = document.getElementById('desktopCalcValueDisplay');
-    const tierValue = document.getElementById('desktopCalcTierValue');
     const resultMonthly = document.getElementById('desktopResultMonthly');
     const resultQuarterly = document.getElementById('desktopResultQuarterly');
     const resultYearly = document.getElementById('desktopResultYearly');
@@ -2086,14 +2771,26 @@ function initDesktopCalculator() {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
     }
 
+    function updateRangeBackground(slider) {
+        if (!slider) return;
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const val = parseFloat(slider.value);
+        const percentage = ((val - min) / (max - min)) * 100;
+        slider.style.background = `linear-gradient(to right, #667eea 0%, #667eea ${percentage}%, #e2e8f0 ${percentage}%)`;
+    }
+
     function calculateResults() {
         const clients = parseInt(clientsSlider.value);
         const value = parseInt(valueSlider.value);
-        const tier = parseInt(tierSlider.value);
+        const tier = parseInt(tierInput.value);
 
         if (clientsValue) clientsValue.textContent = clients;
         if (valueDisplay) valueDisplay.textContent = formatNumber(value);
-        if (tierValue) tierValue.textContent = tier;
+
+        // Update slider backgrounds
+        updateRangeBackground(clientsSlider);
+        updateRangeBackground(valueSlider);
 
         const monthly = Math.round(clients * value * (tier / 100));
         const quarterly = monthly * 3;
@@ -2104,119 +2801,121 @@ function initDesktopCalculator() {
         if (resultYearly) resultYearly.textContent = formatNumber(yearly) + ' zł';
     }
 
-    function updateRangeBackground(slider) {
-        const min = parseFloat(slider.min);
-        const max = parseFloat(slider.max);
-        const val = parseFloat(slider.value);
-        const percentage = ((val - min) / (max - min)) * 100;
-        slider.style.background = `linear-gradient(to right, var(--primary) 0%, var(--primary) ${percentage}%, #e2e8f0 ${percentage}%)`;
+    // Tier buttons handler
+    if (tierSelector) {
+        const tierBtns = tierSelector.querySelectorAll('.tier-btn-desktop');
+        tierBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active from all
+                tierBtns.forEach(b => b.classList.remove('active'));
+                // Add active to clicked
+                this.classList.add('active');
+                // Update hidden input
+                const tierValue = this.getAttribute('data-tier');
+                tierInput.value = tierValue;
+                // Recalculate
+                calculateResults();
+            });
+        });
     }
 
-    [clientsSlider, valueSlider, tierSlider].forEach(slider => {
-        slider.addEventListener('input', () => {
-            calculateResults();
-            updateRangeBackground(slider);
-        });
-        updateRangeBackground(slider);
+    // Slider event listeners
+    console.log('Adding event listeners to sliders');
+    clientsSlider.addEventListener('input', function() {
+        console.log('clientsSlider input event fired, value:', this.value);
+        calculateResults();
+    });
+    valueSlider.addEventListener('input', function() {
+        console.log('valueSlider input event fired, value:', this.value);
+        calculateResults();
     });
 
+    // Initial calculation
+    console.log('Running initial calculateResults');
     calculateResults();
+    console.log('initDesktopCalculator completed');
 }
 
-function updateDesktopInviterInfo() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const inviterKey = urlParams.get('z') || 'Partner';
-    const inviterPhone = urlParams.get('zp') || '';
-    const inviterEmail = urlParams.get('ze') || '';
-    const inviterRole = urlParams.get('zr') || '';
-    const inviterBio = urlParams.get('zb') || '';
-    const inviterPhoto = urlParams.get('zph') || '';
-    const partnerName = urlParams.get('n') || 'Partnerze';
-
-    const inviterInfo = CONFIG.inviters[inviterKey] || {};
-
-    const finalPhone = inviterPhone || inviterInfo.phone || '';
-    const finalEmail = inviterEmail || inviterInfo.email || '';
-    const finalRole = inviterRole || inviterInfo.role || '';
-    const finalBio = inviterBio || inviterInfo.bio || '';
-    const finalPhoto = inviterPhoto || inviterInfo.photo || '';
-    const finalName = inviterInfo.name || inviterKey;
-
-    // Update hero section
-    const desktopInviterName = document.getElementById('desktopInviterName');
-    const desktopPartnerName = document.getElementById('desktopPartnerName');
-
-    if (desktopInviterName) desktopInviterName.textContent = finalName;
-    if (desktopPartnerName) desktopPartnerName.textContent = partnerName;
-
-    // Update inviter card in scheduler section
-    const desktopInviterPhoto = document.getElementById('desktopInviterPhoto');
-    const desktopInviterCardName = document.getElementById('desktopInviterCardName');
-    const desktopInviterCardRole = document.getElementById('desktopInviterCardRole');
-    const desktopInviterCardBio = document.getElementById('desktopInviterCardBio');
-    const desktopInviterPhoneLink = document.getElementById('desktopInviterPhoneLink');
-    const desktopInviterEmailLink = document.getElementById('desktopInviterEmailLink');
-    const desktopInviterCardPhone = document.getElementById('desktopInviterCardPhone');
-    const desktopInviterCardEmail = document.getElementById('desktopInviterCardEmail');
-
-    if (desktopInviterCardName) desktopInviterCardName.textContent = finalName;
-
-    if (desktopInviterCardRole) {
-        if (finalRole) {
-            desktopInviterCardRole.textContent = finalRole;
-            desktopInviterCardRole.style.display = 'block';
-        } else {
-            desktopInviterCardRole.style.display = 'none';
-        }
-    }
-
-    if (desktopInviterPhoto && finalPhoto) {
-        desktopInviterPhoto.src = finalPhoto;
-        desktopInviterPhoto.onerror = function() {
-            this.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
-        };
-    }
-
-    if (desktopInviterCardBio) {
-        if (finalBio) {
-            desktopInviterCardBio.textContent = finalBio;
-            desktopInviterCardBio.style.display = 'block';
-        } else {
-            desktopInviterCardBio.style.display = 'none';
-        }
-    }
-
-    if (desktopInviterPhoneLink && desktopInviterCardPhone) {
-        if (finalPhone) {
-            desktopInviterPhoneLink.href = `tel:${finalPhone.replace(/\s/g, '')}`;
-            desktopInviterCardPhone.textContent = finalPhone;
-            desktopInviterPhoneLink.style.display = 'flex';
-        } else {
-            desktopInviterPhoneLink.style.display = 'none';
-        }
-    }
-
-    if (desktopInviterEmailLink && desktopInviterCardEmail) {
-        if (finalEmail) {
-            desktopInviterEmailLink.href = `mailto:${finalEmail}`;
-            desktopInviterCardEmail.textContent = finalEmail;
-            desktopInviterEmailLink.style.display = 'flex';
-        } else {
-            desktopInviterEmailLink.style.display = 'none';
-        }
-    }
-}
+// updateDesktopInviterInfo - usunięta, personalizacja przez personalizeContent()
 
 function initDesktopApp() {
-    updateDesktopInviterInfo();
+    console.log('initDesktopApp called');
     initDesktopCalculator();
     initDesktopScheduler();
+
+    // Check for existing meeting and update UI
+    updateMeetingConfirmedUI();
+
+    console.log('initDesktopApp completed');
 }
 
-// Extend initLanding to include both mobile and desktop app init
-const extendedInitLanding = initLanding;
-initLanding = function() {
-    extendedInitLanding();
-    initMobileApp();
-    initDesktopApp();
+// ============ PHOTO PICKER FOR EDIT INVITER ============
+
+const DEFAULT_PHOTO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E";
+
+function initPhotoPicker() {
+    const fileInput = document.getElementById('editInviterPhotoFile');
+    const preview = document.getElementById('editInviterPhotoPreview');
+    const hiddenInput = document.getElementById('editInviterPhoto');
+    const removeBtn = document.getElementById('btnRemovePhoto');
+
+    if (!fileInput) return;
+
+    // Obsługa wyboru pliku
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Sprawdź rozmiar (max 500KB)
+            if (file.size > 500 * 1024) {
+                showToast('Zdjęcie za duże. Maksymalnie 500 KB.', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const base64 = event.target.result;
+                preview.src = base64;
+                hiddenInput.value = base64;
+                removeBtn.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Obsługa usunięcia zdjęcia
+    removeBtn.addEventListener('click', function() {
+        preview.src = DEFAULT_PHOTO;
+        hiddenInput.value = '';
+        fileInput.value = '';
+        removeBtn.style.display = 'none';
+    });
+}
+
+// Rozszerz funkcję otwierania modalu edycji
+const originalOpenEditInviterModal = openEditInviterModal;
+openEditInviterModal = function(id) {
+    originalOpenEditInviterModal(id);
+
+    setTimeout(() => {
+        initPhotoPicker();
+
+        const inviter = InvitersState.inviters.find(inv => inv.id === id);
+        const preview = document.getElementById('editInviterPhotoPreview');
+        const hiddenInput = document.getElementById('editInviterPhoto');
+        const removeBtn = document.getElementById('btnRemovePhoto');
+        const fileInput = document.getElementById('editInviterPhotoFile');
+
+        if (inviter && inviter.photo) {
+            preview.src = inviter.photo;
+            hiddenInput.value = inviter.photo;
+            removeBtn.style.display = 'block';
+        } else {
+            preview.src = DEFAULT_PHOTO;
+            hiddenInput.value = '';
+            removeBtn.style.display = 'none';
+        }
+
+        // Resetuj file input
+        if (fileInput) fileInput.value = '';
+    }, 100);
 };

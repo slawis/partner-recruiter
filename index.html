@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Partner Recruiter | posrednik.app</title>
 
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23667eea'/><stop offset='100%25' stop-color='%23764ba2'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>💼</text></svg>">
+    <link rel="icon" type="image/png" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23667eea'/><stop offset='100%25' stop-color='%23764ba2'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>💼</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23667eea'/><stop offset='100%25' stop-color='%23764ba2'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23g)'/><text x='50' y='65' font-size='55' text-anchor='middle' fill='white'>💼</text></svg>">
+    <meta name="theme-color" content="#667eea">
+    <meta name="msapplication-TileColor" content="#667eea">
+
     <!-- SEO Protection - zapobiega indeksowaniu zduplikowanych stron z parametrami -->
     <link rel="canonical" href="https://posrednik.app/partner-recruiter/" />
     <meta name="robots" content="noindex, nofollow" />
@@ -214,30 +221,93 @@
                 </div>
             </div>
 
-            <!-- Historia zaproszeń -->
-            <div class="history-section">
-                <div class="section-header">
-                    <h3>Historia zaproszeń</h3>
-                    <button class="btn-clear-history" id="btnClearHistory">Wyczyść</button>
+            <!-- History & Calendar Section with Tabs -->
+            <div class="dashboard-section">
+                <div class="dashboard-tabs">
+                    <button class="dashboard-tab active" data-tab="history">
+                        <span class="tab-icon">📋</span>
+                        <span class="tab-text">Historia zaproszeń</span>
+                        <span class="tab-badge" id="historyCount">0</span>
+                    </button>
+                    <button class="dashboard-tab" data-tab="calendar">
+                        <span class="tab-icon">📅</span>
+                        <span class="tab-text">Kalendarz spotkań</span>
+                        <span class="tab-badge" id="meetingsCount">0</span>
+                    </button>
                 </div>
-                <div class="history-table-wrapper">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Pośrednik</th>
-                                <th>Zapraszający</th>
-                                <th>Styl</th>
-                                <th>Status</th>
-                                <th>Akcje</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyBody">
-                            <tr class="empty-row">
-                                <td colspan="6">Brak wysłanych zaproszeń</td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                <!-- Tab: Historia zaproszeń -->
+                <div class="dashboard-tab-content active" id="tabHistory">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <h3>Historia zaproszeń</h3>
+                            <p>Lista wszystkich wygenerowanych zaproszeń</p>
+                        </div>
+                        <button class="btn-clear-history" id="btnClearHistory">
+                            <span>🗑️</span> Wyczyść
+                        </button>
+                    </div>
+                    <div class="history-table-wrapper">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Pośrednik</th>
+                                    <th>Zapraszający</th>
+                                    <th>Styl</th>
+                                    <th>Status</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyBody">
+                                <tr class="empty-row">
+                                    <td colspan="6">Brak wysłanych zaproszeń</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab: Kalendarz spotkań -->
+                <div class="dashboard-tab-content" id="tabCalendar">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <h3>Kalendarz spotkań</h3>
+                            <p>Spotkania umówione przez partnerów</p>
+                        </div>
+                        <div class="calendar-filters">
+                            <button class="filter-btn active" data-filter="all">Wszystkie</button>
+                            <button class="filter-btn" data-filter="upcoming">Nadchodzące</button>
+                            <button class="filter-btn" data-filter="past">Przeszłe</button>
+                        </div>
+                    </div>
+
+                    <div class="calendar-view">
+                        <!-- Calendar Stats -->
+                        <div class="calendar-stats">
+                            <div class="cal-stat">
+                                <span class="cal-stat-value" id="statTodayMeetings">0</span>
+                                <span class="cal-stat-label">Dziś</span>
+                            </div>
+                            <div class="cal-stat">
+                                <span class="cal-stat-value" id="statWeekMeetings">0</span>
+                                <span class="cal-stat-label">Ten tydzień</span>
+                            </div>
+                            <div class="cal-stat">
+                                <span class="cal-stat-value" id="statTotalMeetings">0</span>
+                                <span class="cal-stat-label">Łącznie</span>
+                            </div>
+                        </div>
+
+                        <!-- Meetings List -->
+                        <div class="meetings-list" id="meetingsList">
+                            <div class="meetings-empty">
+                                <span class="empty-icon">📅</span>
+                                <p>Brak umówionych spotkań</p>
+                                <small>Spotkania pojawią się tutaj, gdy partnerzy umówią rozmowę</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -341,10 +411,24 @@
                         <label for="editInviterBio">Krótki opis</label>
                         <textarea id="editInviterBio" rows="2"></textarea>
                     </div>
-                    <div class="form-group">
-                        <label for="editInviterPhoto">URL zdjęcia</label>
-                        <input type="url" id="editInviterPhoto">
+                    <div class="form-group photo-picker-group">
+                        <label>Zdjęcie</label>
+                        <div class="photo-picker-wrapper">
+                            <div class="photo-picker-preview">
+                                <img id="editInviterPhotoPreview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E" alt="Podgląd">
+                            </div>
+                            <div class="photo-picker-controls">
+                                <input type="file" id="editInviterPhotoFile" accept="image/*" class="photo-file-input">
+                                <label for="editInviterPhotoFile" class="photo-file-label">
+                                    <span class="photo-file-icon">📁</span>
+                                    <span class="photo-file-text">Wybierz zdjęcie z dysku</span>
+                                </label>
+                                <input type="hidden" id="editInviterPhoto">
+                                <button type="button" id="btnRemovePhoto" class="btn-remove-photo" style="display:none;">🗑️ Usuń zdjęcie</button>
+                            </div>
+                        </div>
                     </div>
+
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" onclick="closeEditInviterModal()">Anuluj</button>
                         <button type="submit" class="btn-save">💾 Zapisz zmiany</button>
@@ -378,35 +462,91 @@
         <!-- ===== MOBILE APP CONTENT ===== -->
         <main class="app-content">
 
-            <!-- Welcome Card -->
-            <section class="app-card welcome-card" id="welcomeSection">
-                <div class="welcome-inviter">
-                    <div class="inviter-avatar-wrapper">
-                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E" alt="" class="inviter-avatar-img" id="appInviterPhoto">
-                        <span class="inviter-online-dot"></span>
+            <!-- Unified Invitation Card -->
+            <section class="unified-invitation-card" id="welcomeSection">
+                <!-- Hero Section - Value Proposition First -->
+                <div class="invitation-hero">
+                    <div class="invitation-greeting">
+                        <h1>Cześć <span id="partnerDisplayName"></span>!</h1>
+                        <p>Mam dla Ciebie propozycję <strong>dodatkowego dochodu</strong></p>
+                        <p class="greeting-subtext">10-35% prowizji od klientów, których i tak tracisz.</p>
                     </div>
-                    <div class="inviter-welcome-text">
-                        <span class="welcome-from">Zaproszenie od</span>
-                        <span class="welcome-name" id="appInviterName">Partnera</span>
-                        <span class="welcome-role" id="appInviterRole"></span>
+                    <div class="invitation-stats">
+                        <div class="inv-stat">
+                            <span class="inv-stat-value">500-6000 zł</span>
+                            <span class="inv-stat-label">prowizja za klienta</span>
+                        </div>
+                        <div class="inv-stat">
+                            <span class="inv-stat-value">5 min</span>
+                            <span class="inv-stat-label">Twojej pracy</span>
+                        </div>
+                        <div class="inv-stat">
+                            <span class="inv-stat-value">14 dni</span>
+                            <span class="inv-stat-label">wypłata prowizji</span>
+                        </div>
                     </div>
                 </div>
-                <div class="welcome-greeting">
-                    <h1>Cześć <span id="partnerDisplayName">Partnerze</span>!</h1>
-                    <p>Mam dla Ciebie propozycję <strong>dodatkowego dochodu</strong></p>
+
+                <!-- Inviter Section -->
+                <div class="invitation-from">
+                    <div class="from-header">
+                        <div class="from-header-line"></div>
+                        <span class="from-header-text">Zaproszenie od</span>
+                        <div class="from-header-line"></div>
+                    </div>
+                    <div class="from-person">
+                        <div class="from-avatar-wrapper">
+                            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%236b8dd6'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E" alt="" class="from-avatar-img" id="appInviterPhoto">
+                            <span class="from-online-dot"></span>
+                        </div>
+                        <div class="from-info">
+                            <span class="from-name" id="appInviterName">Twojego doradcy</span>
+                            <div class="from-role-line">
+                                <span class="from-role" id="appInviterRole"></span>
+                                <a href="#" class="from-phone-link" id="inviterPhoneLink" style="display: none;">
+                                    📞 <span id="inviterPhoneText"></span>
+                                </a>
+                            </div>
+                            <a href="#" class="from-email-link" id="inviterEmailLink" style="display: none;">
+                                ✉️ <span id="inviterEmailText"></span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
-                <div class="welcome-value-props">
-                    <div class="value-chip">
-                        <span class="chip-icon">💰</span>
-                        <span class="chip-text">10-35% prowizji</span>
+
+                <!-- Partner Section (shows when partner data exists) -->
+                <div class="invitation-for" id="partnerBusinessCard" style="display: none;">
+                    <div class="for-header">
+                        <div class="for-header-line"></div>
+                        <span class="for-header-text">Przygotowane dla</span>
+                        <div class="for-header-line"></div>
                     </div>
-                    <div class="value-chip">
-                        <span class="chip-icon">⏱️</span>
-                        <span class="chip-text">5 min pracy</span>
+                    <div class="for-person">
+                        <div class="for-avatar" id="partnerAvatarInitials">JK</div>
+                        <div class="for-info">
+                            <h3 class="for-name" id="partnerCardName">Jan Kowalski</h3>
+                            <div class="for-company" id="partnerCardCompany">
+                                <span id="partnerCardCompanyName">Nazwa Firmy</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="value-chip">
-                        <span class="chip-icon">📅</span>
-                        <span class="chip-text">Wypłata co 14 dni</span>
+                    <div class="for-details-grid">
+                        <div class="for-detail" id="partnerCardNipRow">
+                            <span class="detail-label">NIP</span>
+                            <span class="detail-value" id="partnerCardNip">1234567890</span>
+                        </div>
+                        <div class="for-detail" id="partnerCardPhoneRow">
+                            <span class="detail-label">Tel</span>
+                            <span class="detail-value" id="partnerCardPhone">500 000 000</span>
+                        </div>
+                        <div class="for-detail" id="partnerCardEmailRow">
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value" id="partnerCardEmail">jan@firma.pl</span>
+                        </div>
+                        <div class="for-detail" id="partnerCardAddressRow">
+                            <span class="detail-label">Adres</span>
+                            <span class="detail-value" id="partnerCardAddress">ul. Przykładowa 10</span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -430,37 +570,37 @@
             </div>
 
             <!-- Problem Card -->
-            <section class="app-card problem-card" id="problemSection">
-                <div class="card-header-mini">
-                    <span class="card-icon">🤔</span>
-                    <span class="card-label">Znasz to?</span>
+            <section class="app-card problem-card-v2" id="problemSection">
+                <h2 class="problem-title">Masz klientów, którym bank odmówił kredytu?</h2>
+                <p class="problem-subtitle">Każdy pośrednik finansowy zna ten scenariusz:</p>
+
+                <div class="problem-list">
+                    <div class="problem-item">
+                        <span class="problem-x">✕</span>
+                        <span class="problem-text">Klient przychodzi po kredyt</span>
+                    </div>
+                    <div class="problem-item">
+                        <span class="problem-x">✕</span>
+                        <span class="problem-text">Bank odmawia <span class="problem-detail">(BIK, zadłużenie, komornik)</span></span>
+                    </div>
+                    <div class="problem-item">
+                        <span class="problem-x">✕</span>
+                        <span class="problem-text">Klient odchodzi z niczym</span>
+                    </div>
+                    <div class="problem-item highlight">
+                        <span class="problem-x">✕</span>
+                        <span class="problem-text"><strong>Ty tracisz czas i pieniądze</strong></span>
+                    </div>
                 </div>
-                <h2>Klient przychodzi, bank odmawia...</h2>
-                <div class="problem-steps">
-                    <div class="problem-step">
-                        <span class="ps-num">1</span>
-                        <span class="ps-text">Klient chce kredyt</span>
-                        <span class="ps-icon">👤</span>
-                    </div>
-                    <div class="problem-step">
-                        <span class="ps-num">2</span>
-                        <span class="ps-text">Bank odmawia</span>
-                        <span class="ps-icon">🏦</span>
-                    </div>
-                    <div class="problem-step negative">
-                        <span class="ps-num">3</span>
-                        <span class="ps-text">Tracisz klienta i kasę</span>
-                        <span class="ps-icon">💸</span>
-                    </div>
-                </div>
-                <div class="problem-loss-badge">
-                    <span class="loss-icon">📉</span>
-                    <span class="loss-text">Tracisz nawet <strong>50-100k zł</strong> rocznie</span>
+
+                <div class="problem-bottom-line">
+                    <span class="pbl-icon">💸</span>
+                    <span class="pbl-text">Tracisz nawet <strong>50-100k zł</strong> rocznie</span>
                 </div>
             </section>
 
             <!-- Solution Card -->
-            <section class="app-card solution-card" id="solutionSection">
+            <section class="app-card solution-card-v2" id="solutionSection">
                 <div class="card-header-mini">
                     <span class="card-icon">💡</span>
                     <span class="card-label">Rozwiązanie</span>
@@ -468,59 +608,47 @@
                 <h2>Zamień "odrzuty" w prowizję</h2>
                 <p class="solution-desc">Przekaż nam klienta → My go oddłużamy → Ty dostajesz prowizję</p>
 
-                <!-- Services Carousel -->
-                <div class="services-carousel-wrapper">
-                    <div class="services-carousel" id="servicesCarousel">
-                        <div class="service-slide">
-                            <div class="service-slide-icon">🤝</div>
-                            <div class="service-slide-content">
-                                <h4>Ugoda z wierzycielami</h4>
-                                <p>Redukcja długu 30-70%</p>
-                                <div class="service-slide-commission">
-                                    <span class="commission-label">Twoja prowizja:</span>
-                                    <span class="commission-value">1.500 - 5.250 zł</span>
-                                </div>
-                            </div>
+                <!-- Services List -->
+                <div class="services-list-v2">
+                    <div class="service-item-v2">
+                        <div class="siv2-icon">🤝</div>
+                        <div class="siv2-content">
+                            <h4 class="siv2-title">Ugoda z wierzycielami</h4>
+                            <p class="siv2-desc">Redukcja długu 30-70%</p>
                         </div>
-                        <div class="service-slide">
-                            <div class="service-slide-icon">⚖️</div>
-                            <div class="service-slide-content">
-                                <h4>Upadłość konsumencka</h4>
-                                <p>Umorzenie nawet 100% długu</p>
-                                <div class="service-slide-commission">
-                                    <span class="commission-label">Twoja prowizja:</span>
-                                    <span class="commission-value">500 - 2.000 zł</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="service-slide">
-                            <div class="service-slide-icon">🏠</div>
-                            <div class="service-slide-content">
-                                <h4>Ochrona majątku</h4>
-                                <p>Ochrona przed komornikiem</p>
-                                <div class="service-slide-commission">
-                                    <span class="commission-label">Twoja prowizja:</span>
-                                    <span class="commission-value">2.000 - 6.000 zł</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="service-slide">
-                            <div class="service-slide-icon">🏢</div>
-                            <div class="service-slide-content">
-                                <h4>Restrukturyzacja firmy</h4>
-                                <p>Dla przedsiębiorców</p>
-                                <div class="service-slide-commission">
-                                    <span class="commission-label">Twoja prowizja:</span>
-                                    <span class="commission-value">3.000 - 10.000 zł</span>
-                                </div>
-                            </div>
+                        <div class="siv2-commission">
+                            <span class="siv2-amount">1.500 - 5.250 zł</span>
                         </div>
                     </div>
-                    <div class="carousel-dots" id="carouselDots">
-                        <span class="dot active"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
-                        <span class="dot"></span>
+                    <div class="service-item-v2">
+                        <div class="siv2-icon">⚖️</div>
+                        <div class="siv2-content">
+                            <h4 class="siv2-title">Upadłość konsumencka</h4>
+                            <p class="siv2-desc">Umorzenie nawet 100% długu</p>
+                        </div>
+                        <div class="siv2-commission">
+                            <span class="siv2-amount">500 - 2.000 zł</span>
+                        </div>
+                    </div>
+                    <div class="service-item-v2">
+                        <div class="siv2-icon">🏠</div>
+                        <div class="siv2-content">
+                            <h4 class="siv2-title">Ochrona majątku</h4>
+                            <p class="siv2-desc">Ochrona przed komornikiem</p>
+                        </div>
+                        <div class="siv2-commission">
+                            <span class="siv2-amount">2.000 - 6.000 zł</span>
+                        </div>
+                    </div>
+                    <div class="service-item-v2">
+                        <div class="siv2-icon">🏢</div>
+                        <div class="siv2-content">
+                            <h4 class="siv2-title">Restrukturyzacja firmy</h4>
+                            <p class="siv2-desc">Dla przedsiębiorców</p>
+                        </div>
+                        <div class="siv2-commission">
+                            <span class="siv2-amount">3.000 - 10.000 zł</span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -541,36 +669,35 @@
                         </div>
                         <div class="how-step-time">0 min</div>
                     </div>
-                    <div class="how-step-arrow">↓</div>
                     <div class="how-step">
                         <div class="how-step-icon">📱</div>
                         <div class="how-step-content">
-                            <h4>Przekaż kontakt</h4>
-                            <p>Wyślij dane przez formularz lub telefon.</p>
+                            <h4>Dodaj do CRM</h4>
+                            <p>Wpisz klienta do systemu. Pełna transparentność.</p>
                         </div>
                         <div class="how-step-time">2 min</div>
                     </div>
-                    <div class="how-step-arrow">↓</div>
                     <div class="how-step featured">
                         <div class="how-step-icon">💰</div>
                         <div class="how-step-content">
                             <h4>Odbierz prowizję</h4>
-                            <p>My obsługujemy klienta, Ty dostajesz kasę.</p>
+                            <p>My obsługujemy klienta, Ty otrzymujesz prowizję.</p>
                         </div>
                         <div class="how-step-time">💵</div>
                     </div>
                 </div>
             </section>
 
-            <!-- Calculator Card -->
-            <section class="app-card calculator-card" id="calcSection">
+            <!-- Calculator + Tiers Combined -->
+            <section class="app-card calc-combined-card" id="calcSection">
                 <div class="card-header-mini">
                     <span class="card-icon">🧮</span>
-                    <span class="card-label">Kalkulator</span>
+                    <span class="card-label">Kalkulator prowizji</span>
                 </div>
                 <h2>Ile możesz zarobić?</h2>
 
-                <div class="calc-sliders">
+                <!-- Sliders -->
+                <div class="calc-sliders-v2">
                     <div class="calc-slider-group">
                         <div class="calc-slider-header">
                             <span class="calc-slider-label">Klientów miesięcznie</span>
@@ -585,73 +712,54 @@
                         </div>
                         <input type="range" id="calcValue" min="5000" max="25000" step="1000" value="10000" class="app-range">
                     </div>
-                    <div class="calc-slider-group">
-                        <div class="calc-slider-header">
-                            <span class="calc-slider-label">Poziom prowizji</span>
-                            <span class="calc-slider-value"><span id="calcTierValue">20</span>%</span>
-                        </div>
-                        <input type="range" id="calcTier" min="10" max="35" step="5" value="20" class="app-range">
+                </div>
+
+                <!-- Tier Selector -->
+                <div class="tier-selector-section">
+                    <div class="tier-selector-label">Wybierz poziom partnerski</div>
+                    <div class="tier-selector" id="tierSelector">
+                        <button type="button" class="tier-btn" data-tier="10" data-name="Start">
+                            <span class="tier-btn-percent">10%</span>
+                            <span class="tier-btn-name">Start</span>
+                        </button>
+                        <button type="button" class="tier-btn" data-tier="15" data-name="Brązowy">
+                            <span class="tier-btn-percent">15%</span>
+                            <span class="tier-btn-name">Brązowy</span>
+                        </button>
+                        <button type="button" class="tier-btn active" data-tier="20" data-name="Srebrny">
+                            <span class="tier-btn-percent">20%</span>
+                            <span class="tier-btn-name">Srebrny</span>
+                        </button>
+                        <button type="button" class="tier-btn" data-tier="25" data-name="Złoty">
+                            <span class="tier-btn-percent">25%</span>
+                            <span class="tier-btn-name">Złoty</span>
+                        </button>
+                        <button type="button" class="tier-btn" data-tier="35" data-name="Platynowy">
+                            <span class="tier-btn-percent">35%</span>
+                            <span class="tier-btn-name">Platynowy</span>
+                        </button>
+                    </div>
+                    <div class="tier-info-bar" id="tierInfoBar">
+                        <span class="tier-info-text"><strong>Srebrny</strong> — 10+ klientów</span>
                     </div>
                 </div>
 
-                <div class="calc-results-grid">
-                    <div class="calc-result-box">
-                        <span class="crb-label">Miesięcznie</span>
-                        <span class="crb-value" id="resultMonthly">10 000 zł</span>
-                    </div>
-                    <div class="calc-result-box">
-                        <span class="crb-label">Kwartalnie</span>
-                        <span class="crb-value" id="resultQuarterly">30 000 zł</span>
-                    </div>
-                    <div class="calc-result-box featured">
-                        <span class="crb-label">Rocznie</span>
-                        <span class="crb-value" id="resultYearly">120 000 zł</span>
-                    </div>
-                </div>
-            </section>
+                <!-- Hidden input for compatibility -->
+                <input type="hidden" id="calcTier" value="20">
 
-            <!-- Commission Tiers Card -->
-            <section class="app-card tiers-card" id="tiersSection">
-                <div class="card-header-mini">
-                    <span class="card-icon">📈</span>
-                    <span class="card-label">Prowizje</span>
-                </div>
-                <h2>Jak rosną Twoje stawki?</h2>
-                <div class="tiers-ladder">
-                    <div class="tier-rung">
-                        <div class="tier-rung-info">
-                            <span class="tier-rung-name">Start</span>
-                            <span class="tier-rung-req">Każdy nowy partner</span>
-                        </div>
-                        <div class="tier-rung-percent">10%</div>
+                <!-- Results -->
+                <div class="calc-results-v2">
+                    <div class="calc-result-item">
+                        <span class="cri-label">Miesięcznie</span>
+                        <span class="cri-value" id="resultMonthly">10 000 zł</span>
                     </div>
-                    <div class="tier-rung">
-                        <div class="tier-rung-info">
-                            <span class="tier-rung-name">Brązowy</span>
-                            <span class="tier-rung-req">3+ klientów</span>
-                        </div>
-                        <div class="tier-rung-percent">15%</div>
+                    <div class="calc-result-item">
+                        <span class="cri-label">Kwartalnie</span>
+                        <span class="cri-value" id="resultQuarterly">30 000 zł</span>
                     </div>
-                    <div class="tier-rung">
-                        <div class="tier-rung-info">
-                            <span class="tier-rung-name">Srebrny</span>
-                            <span class="tier-rung-req">10+ klientów</span>
-                        </div>
-                        <div class="tier-rung-percent">20%</div>
-                    </div>
-                    <div class="tier-rung">
-                        <div class="tier-rung-info">
-                            <span class="tier-rung-name">Złoty</span>
-                            <span class="tier-rung-req">25+ klientów</span>
-                        </div>
-                        <div class="tier-rung-percent">25%</div>
-                    </div>
-                    <div class="tier-rung featured">
-                        <div class="tier-rung-info">
-                            <span class="tier-rung-name">Platynowy</span>
-                            <span class="tier-rung-req">50+ klientów</span>
-                        </div>
-                        <div class="tier-rung-percent">35%</div>
+                    <div class="calc-result-item featured">
+                        <span class="cri-label">Rocznie</span>
+                        <span class="cri-value" id="resultYearly">120 000 zł</span>
                     </div>
                 </div>
             </section>
@@ -659,34 +767,34 @@
             <!-- Trust Card -->
             <section class="app-card trust-card" id="trustSection">
                 <div class="card-header-mini">
-                    <span class="card-icon">✅</span>
-                    <span class="card-label">Gwarancje</span>
+                    <span class="card-icon">🤝</span>
+                    <span class="card-label">Warunki współpracy</span>
                 </div>
-                <h2>Bez haczyków</h2>
+                <h2>Uczciwe zasady</h2>
                 <div class="trust-grid">
                     <div class="trust-item">
                         <span class="trust-icon">💵</span>
-                        <span class="trust-text">Zero opłat na start</span>
+                        <span class="trust-text">Brak opłat wstępnych</span>
                     </div>
                     <div class="trust-item">
                         <span class="trust-icon">📅</span>
-                        <span class="trust-text">Wypłata co 14 dni</span>
+                        <span class="trust-text">Wypłaty co 14 dni</span>
                     </div>
                     <div class="trust-item">
                         <span class="trust-icon">📊</span>
-                        <span class="trust-text">Panel partnera</span>
+                        <span class="trust-text">Dostęp do panelu CRM</span>
                     </div>
                     <div class="trust-item">
-                        <span class="trust-icon">🆘</span>
-                        <span class="trust-text">Wsparcie 24/7</span>
+                        <span class="trust-icon">👨‍💼</span>
+                        <span class="trust-text">Dedykowany opiekun</span>
                     </div>
                     <div class="trust-item">
                         <span class="trust-icon">🔓</span>
-                        <span class="trust-text">Bez wyłączności</span>
+                        <span class="trust-text">Brak wyłączności</span>
                     </div>
                     <div class="trust-item">
                         <span class="trust-icon">📄</span>
-                        <span class="trust-text">Prosta umowa</span>
+                        <span class="trust-text">Przejrzysta umowa</span>
                     </div>
                 </div>
             </section>
@@ -696,8 +804,8 @@
                 <div class="inviter-contact-header">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E" alt="" class="inviter-contact-photo" id="inviterContactPhoto">
                     <div class="inviter-contact-info">
-                        <span class="inviter-contact-label">Twój opiekun</span>
-                        <h3 class="inviter-contact-name" id="inviterContactName">Partner</h3>
+                        <span class="inviter-contact-label">Twój doradca</span>
+                        <h3 class="inviter-contact-name" id="inviterContactName">Twój doradca</h3>
                         <span class="inviter-contact-role" id="inviterContactRole"></span>
                     </div>
                 </div>
@@ -719,15 +827,15 @@
         </main>
 
         <!-- ===== FIXED BOTTOM CTA BAR ===== -->
-        <div class="app-bottom-bar">
+        <div class="app-bottom-bar" id="mobileBottomBar">
             <div class="bottom-bar-content">
-                <div class="bottom-bar-info">
-                    <span class="bbi-title">Gotowy na współpracę?</span>
-                    <span class="bbi-subtitle">Umów bezpłatną rozmowę</span>
+                <div class="bottom-bar-info" id="mobileBarInfo">
+                    <span class="bbi-title" id="mobileBarTitle">Gotowy na współpracę?</span>
+                    <span class="bbi-subtitle" id="mobileBarSubtitle">Umów bezpłatną rozmowę</span>
                 </div>
                 <button class="bottom-bar-cta" id="btnOpenScheduler">
-                    <span class="cta-icon">📅</span>
-                    <span class="cta-text">Umów się</span>
+                    <span class="cta-icon" id="mobileBarIcon">📅</span>
+                    <span class="cta-text" id="mobileBarBtnText">Umów się</span>
                 </button>
             </div>
         </div>
@@ -742,6 +850,16 @@
             </div>
             <div class="bottom-sheet-content">
                 <form id="meetingForm" class="scheduler-app-form">
+
+                    <!-- Existing Meeting Banner (hidden by default) -->
+                    <div class="existing-meeting-banner" id="existingMeetingBanner" style="display: none;">
+                        <div class="emb-icon">📅</div>
+                        <div class="emb-content">
+                            <div class="emb-title">Masz już umówione spotkanie</div>
+                            <div class="emb-details" id="existingMeetingDetails">-</div>
+                        </div>
+                        <div class="emb-badge">Zmiana terminu</div>
+                    </div>
 
                     <!-- Method Selection -->
                     <div class="scheduler-section">
@@ -828,7 +946,7 @@
                     </div>
                 </div>
                 <p class="success-note">
-                    <span id="modalInviterName">Partner</span> skontaktuje się z Tobą w wybranym terminie.
+                    <span id="modalInviterName">Twój doradca</span> skontaktuje się z Tobą w wybranym terminie.
                 </p>
                 <button class="success-close-btn" onclick="closeModal()">Zamknij</button>
             </div>
@@ -872,36 +990,100 @@
                 </div>
             </nav>
 
-            <!-- Hero Section -->
-            <section class="landing-hero">
-                <div class="hero-background">
-                    <div class="hero-gradient"></div>
-                    <div class="hero-particles"></div>
-                </div>
-                <div class="hero-container">
-                    <div class="hero-badge">
-                        <span class="badge-icon">👋</span>
-                        <span class="badge-text">Zaproszenie od <span id="desktopInviterName">Partnera</span></span>
+            <!-- Hero Section - Redesigned -->
+            <section class="landing-hero-v2">
+                <div class="hero-v2-container">
+                    <!-- Left Column: Greeting & Value Proposition -->
+                    <div class="hero-v2-left">
+                        <h1 class="hero-v2-title">
+                            Cześć <span id="desktopPartnerName">Partnerze</span>!
+                        </h1>
+                        <p class="hero-v2-subtitle">
+                            Mam dla Ciebie propozycję dodatkowego dochodu.
+                            <strong>10-35% prowizji</strong> od klientów, których i tak tracisz.
+                        </p>
+                        <div class="hero-v2-stats">
+                            <div class="hero-v2-stat">
+                                <span class="stat-value">500-6000 zł</span>
+                                <span class="stat-label">prowizja za klienta</span>
+                            </div>
+                            <div class="hero-v2-stat">
+                                <span class="stat-value">5 min</span>
+                                <span class="stat-label">Twojej pracy</span>
+                            </div>
+                            <div class="hero-v2-stat">
+                                <span class="stat-value">14 dni</span>
+                                <span class="stat-label">wypłata prowizji</span>
+                            </div>
+                        </div>
+                        <a href="#cta-section" class="hero-v2-cta">
+                            Chcę dowiedzieć się więcej
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M5 12h14M12 5l7 7-7 7"/>
+                            </svg>
+                        </a>
                     </div>
-                    <h1 class="hero-title">
-                        Cześć <span id="desktopPartnerName">Partnerze</span>!
-                    </h1>
-                    <p class="hero-subtitle">
-                        Mam dla Ciebie propozycję dodatkowego dochodu.<br>
-                        <strong>10-35% prowizji</strong> od klientów, których i tak tracisz.
-                    </p>
-                    <div class="hero-stats">
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">500-6000 zł</span>
-                            <span class="hero-stat-label">prowizja za klienta</span>
+
+                    <!-- Right Column: Cards -->
+                    <div class="hero-v2-right">
+                        <!-- Inviter Card -->
+                        <div class="hero-inviter-card">
+                            <div class="hic-header">
+                                <span class="hic-label">Zaproszenie od</span>
+                            </div>
+                            <div class="hic-content">
+                                <div class="hic-avatar">
+                                    <span>👋</span>
+                                </div>
+                                <div class="hic-info">
+                                    <span class="hic-name" id="desktopInviterName">Twojego doradcy</span>
+                                    <span class="hic-role" id="desktopInviterRole"></span>
+                                </div>
+                            </div>
+                            <div class="hic-contacts" id="desktopInviterContacts" style="display: none;">
+                                <a href="#" class="hic-contact" id="desktopInviterPhoneBadge">
+                                    <span class="hic-contact-icon">📞</span>
+                                    <span id="desktopInviterPhoneText"></span>
+                                </a>
+                                <a href="#" class="hic-contact" id="desktopInviterEmailBadge">
+                                    <span class="hic-contact-icon">✉️</span>
+                                    <span id="desktopInviterEmailText"></span>
+                                </a>
+                            </div>
                         </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">5 min</span>
-                            <span class="hero-stat-label">Twojej pracy</span>
-                        </div>
-                        <div class="hero-stat">
-                            <span class="hero-stat-value">14 dni</span>
-                            <span class="hero-stat-label">wypłata prowizji</span>
+
+                        <!-- Partner Card - shows when partner data exists -->
+                        <div class="hero-partner-card" id="desktopPartnerCard" style="display: none;">
+                            <div class="hpc-header">
+                                <span class="hpc-label">Zaproszenie dla</span>
+                            </div>
+                            <div class="hpc-content">
+                                <div class="hpc-avatar" id="desktopPartnerInitials">JK</div>
+                                <div class="hpc-info">
+                                    <span class="hpc-name" id="desktopPartnerFullName">Jan Kowalski</span>
+                                    <span class="hpc-company" id="desktopPartnerCompanyRow">
+                                        <span id="desktopPartnerCompany">Nazwa Firmy</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="hpc-details">
+                                <div class="hpc-detail" id="desktopPartnerNipRow">
+                                    <span class="hpc-detail-label">NIP</span>
+                                    <span class="hpc-detail-value" id="desktopPartnerNip">1234567890</span>
+                                </div>
+                                <div class="hpc-detail" id="desktopPartnerPhoneRow">
+                                    <span class="hpc-detail-label">Telefon</span>
+                                    <span class="hpc-detail-value" id="desktopPartnerPhone">500 000 000</span>
+                                </div>
+                                <div class="hpc-detail" id="desktopPartnerEmailRow">
+                                    <span class="hpc-detail-label">Email</span>
+                                    <span class="hpc-detail-value" id="desktopPartnerEmail">jan@firma.pl</span>
+                                </div>
+                                <div class="hpc-detail" id="desktopPartnerAddressRow">
+                                    <span class="hpc-detail-label">Adres</span>
+                                    <span class="hpc-detail-value" id="desktopPartnerAddress">ul. Przykładowa 10</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1001,8 +1183,8 @@
                         <div class="step-card">
                             <div class="step-number">2</div>
                             <div class="step-icon">📱</div>
-                            <h3>Przekaż kontakt</h3>
-                            <p>Wyślij nam dane klienta przez formularz lub telefon. Dosłownie 2 minuty.</p>
+                            <h3>Dodaj do CRM</h3>
+                            <p>Wpisz klienta do naszego systemu. Pełna transparentność i kontrola.</p>
                             <div class="step-time">
                                 <span class="time-icon">⏱️</span>
                                 <span>2 minuty</span>
@@ -1013,7 +1195,7 @@
                             <div class="step-number">3</div>
                             <div class="step-icon">💰</div>
                             <h3>Odbierz prowizję</h3>
-                            <p>My obsługujemy klienta od A do Z. Ty dostajesz prowizję po podpisaniu umowy.</p>
+                            <p>My obsługujemy klienta od A do Z. Ty otrzymujesz prowizję.</p>
                             <div class="step-time">
                                 <span class="time-icon">⏱️</span>
                                 <span>Wypłata co 14 dni</span>
@@ -1023,119 +1205,80 @@
                 </div>
             </section>
 
-            <!-- Commission Section -->
-            <section class="landing-commission">
-                <div class="section-container">
-                    <div class="commission-header">
-                        <span class="commission-badge">Prowizje</span>
-                        <h2>Ile możesz zarobić?</h2>
-                        <p>Transparentne stawki - bez ukrytych haczyków</p>
-                    </div>
-                    <div class="commission-content">
-                        <div class="commission-table-wrapper">
-                            <table class="commission-table">
-                                <thead>
-                                    <tr>
-                                        <th>Usługa</th>
-                                        <th>Wartość umowy</th>
-                                        <th>Twoja prowizja (10-35%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Ugoda konsumencka</td>
-                                        <td>8.000 - 15.000 zł</td>
-                                        <td class="commission-value">800 - 5.250 zł</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Upadłość konsumencka</td>
-                                        <td>5.000 - 8.000 zł</td>
-                                        <td class="commission-value">500 - 2.800 zł</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Ochrona majątku</td>
-                                        <td>10.000 - 20.000 zł</td>
-                                        <td class="commission-value">1.000 - 7.000 zł</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Restrukturyzacja</td>
-                                        <td>15.000 - 50.000 zł</td>
-                                        <td class="commission-value">1.500 - 17.500 zł</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="commission-tiers">
-                            <h4>Jak rosną Twoje prowizje?</h4>
-                            <div class="tier-list">
-                                <div class="tier-item">
-                                    <span class="tier-level">Start</span>
-                                    <span class="tier-percent">10%</span>
-                                    <span class="tier-desc">Każdy nowy partner</span>
-                                </div>
-                                <div class="tier-item">
-                                    <span class="tier-level">Brązowy</span>
-                                    <span class="tier-percent">15%</span>
-                                    <span class="tier-desc">3+ klientów</span>
-                                </div>
-                                <div class="tier-item">
-                                    <span class="tier-level">Srebrny</span>
-                                    <span class="tier-percent">20%</span>
-                                    <span class="tier-desc">10+ klientów</span>
-                                </div>
-                                <div class="tier-item">
-                                    <span class="tier-level">Złoty</span>
-                                    <span class="tier-percent">25%</span>
-                                    <span class="tier-desc">25+ klientów</span>
-                                </div>
-                                <div class="tier-item featured">
-                                    <span class="tier-level">Platynowy</span>
-                                    <span class="tier-percent">35%</span>
-                                    <span class="tier-desc">50+ klientów</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Calculator Section -->
-            <section class="landing-calculator">
+            <!-- Calculator + Commission Combined -->
+            <section class="landing-calculator-combined">
                 <div class="section-container">
                     <div class="calculator-header">
-                        <span class="calculator-badge">Kalkulator</span>
-                        <h2>Symulacja Twoich zarobków</h2>
+                        <span class="calculator-badge">Kalkulator prowizji</span>
+                        <h2>Ile możesz zarobić?</h2>
+                        <p>Wybierz poziom partnerski i sprawdź swoje potencjalne zarobki</p>
                     </div>
-                    <div class="calculator-container">
-                        <div class="calculator-inputs">
-                            <div class="calc-group">
-                                <label>Klientów z odmową miesięcznie</label>
-                                <input type="range" id="desktopCalcClients" min="1" max="20" value="5">
-                                <div class="calc-value"><span id="desktopCalcClientsValue">5</span> klientów</div>
+
+                    <div class="calc-combined-desktop">
+                        <!-- Left: Inputs -->
+                        <div class="calc-inputs-side">
+                            <div class="calc-group-desktop">
+                                <label>Klientów miesięcznie</label>
+                                <input type="range" id="desktopCalcClients" min="1" max="20" value="5" class="desktop-range">
+                                <div class="calc-value-display"><span id="desktopCalcClientsValue">5</span></div>
                             </div>
-                            <div class="calc-group">
+                            <div class="calc-group-desktop">
                                 <label>Średnia wartość usługi</label>
-                                <input type="range" id="desktopCalcValue" min="5000" max="25000" step="1000" value="10000">
-                                <div class="calc-value"><span id="desktopCalcValueDisplay">10 000</span> zł</div>
+                                <input type="range" id="desktopCalcValue" min="5000" max="25000" step="1000" value="10000" class="desktop-range">
+                                <div class="calc-value-display"><span id="desktopCalcValueDisplay">10 000</span> zł</div>
                             </div>
-                            <div class="calc-group">
-                                <label>Twój poziom prowizji</label>
-                                <input type="range" id="desktopCalcTier" min="10" max="35" step="5" value="20">
-                                <div class="calc-value"><span id="desktopCalcTierValue">20</span>%</div>
+
+                            <!-- Tier Selector -->
+                            <div class="tier-selector-desktop">
+                                <label>Wybierz poziom partnerski</label>
+                                <div class="tier-buttons-desktop" id="desktopTierSelector">
+                                    <button type="button" class="tier-btn-desktop" data-tier="10">
+                                        <span class="tbd-percent">10%</span>
+                                        <span class="tbd-name">Start</span>
+                                        <span class="tbd-req">Nowy partner</span>
+                                    </button>
+                                    <button type="button" class="tier-btn-desktop" data-tier="15">
+                                        <span class="tbd-percent">15%</span>
+                                        <span class="tbd-name">Brązowy</span>
+                                        <span class="tbd-req">3+ klientów</span>
+                                    </button>
+                                    <button type="button" class="tier-btn-desktop active" data-tier="20">
+                                        <span class="tbd-percent">20%</span>
+                                        <span class="tbd-name">Srebrny</span>
+                                        <span class="tbd-req">10+ klientów</span>
+                                    </button>
+                                    <button type="button" class="tier-btn-desktop" data-tier="25">
+                                        <span class="tbd-percent">25%</span>
+                                        <span class="tbd-name">Złoty</span>
+                                        <span class="tbd-req">25+ klientów</span>
+                                    </button>
+                                    <button type="button" class="tier-btn-desktop" data-tier="35">
+                                        <span class="tbd-percent">35%</span>
+                                        <span class="tbd-name">Platynowy</span>
+                                        <span class="tbd-req">50+ klientów</span>
+                                    </button>
+                                </div>
                             </div>
+
+                            <!-- Hidden input for value -->
+                            <input type="hidden" id="desktopCalcTier" value="20">
                         </div>
-                        <div class="calculator-results">
-                            <div class="calc-result">
-                                <span class="result-label">Miesięcznie</span>
-                                <span class="result-value" id="desktopResultMonthly">10 000 zł</span>
-                            </div>
-                            <div class="calc-result">
-                                <span class="result-label">Kwartalnie</span>
-                                <span class="result-value" id="desktopResultQuarterly">30 000 zł</span>
-                            </div>
-                            <div class="calc-result featured">
-                                <span class="result-label">Rocznie</span>
-                                <span class="result-value" id="desktopResultYearly">120 000 zł</span>
+
+                        <!-- Right: Results -->
+                        <div class="calc-results-side">
+                            <div class="results-card">
+                                <div class="result-row">
+                                    <span class="result-label">Miesięcznie</span>
+                                    <span class="result-value" id="desktopResultMonthly">10 000 zł</span>
+                                </div>
+                                <div class="result-row">
+                                    <span class="result-label">Kwartalnie</span>
+                                    <span class="result-value" id="desktopResultQuarterly">30 000 zł</span>
+                                </div>
+                                <div class="result-row featured">
+                                    <span class="result-label">Rocznie</span>
+                                    <span class="result-value" id="desktopResultYearly">120 000 zł</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1146,39 +1289,40 @@
             <section class="landing-transparency">
                 <div class="section-container">
                     <div class="transparency-header">
-                        <span class="transparency-badge">Bez haczyków</span>
-                        <h2>Pełna transparentność</h2>
+                        <span class="transparency-badge">Warunki współpracy</span>
+                        <h2>Uczciwe i przejrzyste zasady</h2>
+                        <p class="transparency-subtitle">Stawiamy na partnerstwo oparte na wzajemnym zaufaniu</p>
                     </div>
                     <div class="transparency-grid">
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Zero opłat wstępnych</h4>
-                            <p>Nie płacisz nic za dołączenie. Zarabiasz od pierwszego klienta.</p>
+                            <span class="trans-icon">💵</span>
+                            <h4>Brak opłat wstępnych</h4>
+                            <p>Dołączasz bezpłatnie. Zarabiasz od pierwszego poleconego klienta.</p>
                         </div>
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Wypłata co 14 dni</h4>
-                            <p>Regularne przelewy. Bez opóźnień, bez wymówek.</p>
+                            <span class="trans-icon">📅</span>
+                            <h4>Regularne wypłaty</h4>
+                            <p>Przelewy co 14 dni. Terminowo i przewidywalnie.</p>
                         </div>
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Panel partnera</h4>
-                            <p>Widzisz status każdego klienta. Pełna kontrola.</p>
+                            <span class="trans-icon">📊</span>
+                            <h4>Panel partnera CRM</h4>
+                            <p>Pełny wgląd w status każdego klienta. Transparentność na każdym etapie.</p>
                         </div>
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Wsparcie 24/7</h4>
-                            <p>Dedykowany opiekun. Szkolenia. Materiały.</p>
+                            <span class="trans-icon">👨‍💼</span>
+                            <h4>Dedykowany opiekun</h4>
+                            <p>Osobisty kontakt, szkolenia produktowe i wsparcie merytoryczne.</p>
                         </div>
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Bez wyłączności</h4>
-                            <p>Współpracuj z kim chcesz. Zero ograniczeń.</p>
+                            <span class="trans-icon">🔓</span>
+                            <h4>Brak wyłączności</h4>
+                            <p>Swoboda współpracy. Żadnych ograniczeń ani zobowiązań.</p>
                         </div>
                         <div class="transparency-card">
-                            <span class="trans-icon">✅</span>
-                            <h4>Prosta umowa</h4>
-                            <p>2 strony, bez kruczków prawnych. Możesz zrezygnować kiedy chcesz.</p>
+                            <span class="trans-icon">📄</span>
+                            <h4>Przejrzysta umowa</h4>
+                            <p>Krótka, zrozumiała umowa. Możesz zrezygnować w dowolnym momencie.</p>
                         </div>
                     </div>
                 </div>
@@ -1198,8 +1342,8 @@
                                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%232563eb'/%3E%3Ctext x='50' y='55' font-size='40' fill='white' text-anchor='middle' dominant-baseline='middle'%3E👤%3C/text%3E%3C/svg%3E" alt="Zapraszający" id="desktopInviterPhoto" class="inviter-photo">
                                 </div>
                                 <div class="inviter-card-info">
-                                    <span class="inviter-card-label">Twój opiekun</span>
-                                    <h4 class="inviter-card-name" id="desktopInviterCardName">Partner</h4>
+                                    <span class="inviter-card-label">Twój doradca</span>
+                                    <h4 class="inviter-card-name" id="desktopInviterCardName">Twój doradca</h4>
                                     <span class="inviter-card-role" id="desktopInviterCardRole"></span>
                                     <div class="inviter-card-contacts">
                                         <a href="#" class="inviter-contact-item" id="desktopInviterPhoneLink" style="display:none;">
@@ -1216,7 +1360,31 @@
                             </div>
                         </div>
 
+                        <!-- Meeting Confirmed Panel (hidden by default) -->
+                        <div class="meeting-confirmed-panel" id="desktopMeetingConfirmed" style="display: none;">
+                            <div class="mcp-icon">✅</div>
+                            <h3 class="mcp-title">Spotkanie umówione!</h3>
+                            <div class="mcp-details">
+                                <div class="mcp-date" id="desktopConfirmedDate">-</div>
+                                <div class="mcp-method" id="desktopConfirmedMethod">-</div>
+                            </div>
+                            <p class="mcp-note">Skontaktujemy się z Tobą w wybranym terminie</p>
+                            <button type="button" class="mcp-change-btn" id="btnChangeDesktopMeeting">
+                                Zmień termin
+                            </button>
+                        </div>
+
                         <form id="desktopMeetingForm" class="scheduler-form">
+                            <!-- Existing Meeting Banner (hidden by default) -->
+                            <div class="existing-meeting-banner" id="desktopExistingMeetingBanner" style="display: none;">
+                                <div class="emb-icon">📅</div>
+                                <div class="emb-content">
+                                    <div class="emb-title">Masz już umówione spotkanie</div>
+                                    <div class="emb-details" id="desktopExistingMeetingDetails">-</div>
+                                </div>
+                                <div class="emb-badge">Zmiana terminu</div>
+                            </div>
+
                             <!-- Step 1: Contact Method -->
                             <div class="scheduler-step">
                                 <div class="step-header">

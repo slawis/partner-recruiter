@@ -2,7 +2,7 @@
 
 ## Opis projektu
 Narzędzie do rekrutacji partnerów B2B dla serwisu oddłużeniowego. Składa się z dwóch trybów:
-1. **Generator Mode** - panel dla managera do generowania linków zaproszeniowych
+1. **Generator Mode** - panel dla managera do generowania linków zaproszeniowych + kalendarz spotkań
 2. **Landing Mode** - strona dla potencjalnego partnera (pośrednika)
 
 ## Struktura plików
@@ -15,17 +15,30 @@ partner-recruiter/
     └── CLAUDE.md # Ten plik
 ```
 
-## Kluczowe sekcje Landing Page
-- **Hero** - powitanie z imieniem partnera i zapraszającego
+## Generator Mode - Dashboard
+
+### Zakładki
+- **Historia zaproszeń** - lista wygenerowanych zaproszeń ze statusami
+- **Kalendarz spotkań** - umówione spotkania od partnerów
+
+### Kalendarz spotkań
+- Statystyki: łączna liczba, nadchodzące w tym tygodniu, video rozmowy
+- Filtry: Wszystkie / Nadchodzące / Przeszłe
+- Karty spotkań z datą, godziną, metodą kontaktu, danymi partnera
+- Automatyczne czyszczenie duplikatów przy inicjalizacji
+
+## Landing Page - Sekcje
+
+- **Hero** - powitanie z imieniem partnera i zapraszającego (desktop: 2-kolumnowy layout)
 - **Problem** - opis problemów pośredników
 - **Solution** - 5 usług oddłużeniowych (karuzela na mobile)
 - **How it works** - 3 kroki współpracy
-- **Commission** - tabela prowizji + progi (10-35%)
-- **Calculator** - interaktywny kalkulator zarobków
-- **Transparency** - gwarancje i zasady
+- **Commission + Calculator** - interaktywny kalkulator z progami prowizji (10-35%)
+- **Transparency** - warunki współpracy i zasady
 - **CTA/Scheduler** - formularz umawiania spotkania
 
 ## URL Parameters (Landing)
+- `id` - unikalne ID zaproszenia (do śledzenia)
 - `n` - imię partnera (np. "Jan Kowalski")
 - `p` - telefon partnera
 - `e` - email partnera
@@ -36,39 +49,89 @@ partner-recruiter/
 - `zb` - bio zapraszającego
 - `zph` - URL zdjęcia zapraszającego
 
-## Zapraszający (Inviters)
-- Przechowywani w `localStorage` pod kluczem `partnerRecruiterInviters`
-- Zarządzanie przez panel Settings (ikona koła zębatego)
-- Domyślni w `CONFIG.inviters`: Sławek, Marcin, Irek
+## localStorage Keys
+- `partnerRecruiterInviters` - lista zapraszających (doradców)
+- `recruiter_history` - historia wygenerowanych zaproszeń
+- `scheduledMeetings` - umówione spotkania (wspólne dla landing i kalendarza)
 
-## Scheduler
+## Scheduler - Umawianie spotkań
+
+### Funkcjonalność
 - Wybór metody kontaktu: telefon / video
-- Wybór daty (7 dni, przewijanie)
+- Wybór daty (przewijanie, pomijanie weekendów)
 - Wybór godziny (09:00 - 17:30)
-- Spotkania zapisywane w `localStorage` pod `scheduledMeetings`
 
-## Style CSS
-- **Motyw:** Jasny SaaS (--bg-body: #f0f4f8)
-- **Primary color:** #2563eb (niebieski)
-- **Font:** Inter (Google Fonts)
-- **Klasy dat:** `.date-item`, `.date-item.active`
-- **Klasy czasu:** `.time-slot`, `.time-slot.active`
-- **Summary:** `.scheduler-summary.ready`
+### Wykrywanie istniejących spotkań
+- Przy otwarciu schedulera sprawdza czy partner ma już spotkanie
+- Wyświetla baner "Masz już umówione spotkanie" z datą
+- Przy zapisie nadpisuje istniejące spotkanie (to samo ID)
+- Szuka po `invitationId` lub kombinacji: imię + telefon + doradca
 
-## Ważne ID elementów
-- `inviterName`, `partnerName` - w hero
-- `calcClients`, `calcValue`, `calcTier` - kalkulator
-- `ctaInviterName`, `ctaInviterPhone` - karta zapraszającego w scheduler
+### Stan "Spotkanie umówione"
+- **Mobile**: Dolna belka zmienia tekst na datę spotkania, przycisk "Zmień"
+- **Desktop**: Panel potwierdzenia z przyciskiem "Zmień termin"
 
-## Funkcje JavaScript
+## Struktura danych - Meeting
+```javascript
+{
+  id: 'meeting_123456789_abc',
+  partnerName: 'Jan Kowalski',
+  partnerPhone: '123456789',
+  partnerEmail: 'jan@example.com',
+  date: '2026-01-21',
+  time: '13:00',
+  method: 'phone', // lub 'video'
+  inviterName: 'Sławek',
+  invitationId: 'inv_abc123',
+  scheduledAt: '2026-01-16T10:00:00.000Z'
+}
+```
+
+## Kluczowe funkcje JavaScript
+
+### Generator
 - `initGenerator()` - inicjalizacja panelu generatora
-- `initLanding()` - inicjalizacja landing page
-- `generateLink()` - generowanie linku zaproszeniowego
+- `initDashboardTabs()` - przełączanie zakładek
+- `initCalendar()` - kalendarz spotkań
+- `renderMeetings()` - renderowanie listy spotkań
+- `cleanupDuplicateMeetings()` - usuwanie duplikatów
 - `initSettings()` - panel ustawień zapraszających
-- `displayInviterOnLanding()` - wypełnianie danych zapraszającego z URL
+
+### Landing
+- `initLanding()` - inicjalizacja landing page
+- `initMobileApp()` - inicjalizacja wersji mobilnej
+- `initDesktopApp()` - inicjalizacja wersji desktop
+- `getExistingMeetingForInvitation()` - szukanie istniejącego spotkania
+- `updateMeetingConfirmedUI()` - aktualizacja UI po umówieniu
+- `handleMobileScheduleSubmit()` - zapis spotkania (mobile)
+- `handleDesktopScheduleSubmit()` - zapis spotkania (desktop)
+
+### Inne
+- `generateLink()` - generowanie linku zaproszeniowego
+- `personalizeContent()` - personalizacja treści na landing
+- `showToast()` - powiadomienia toast
+
+## Style CSS - Klasy
+
+### Główne
+- **Primary gradient:** `linear-gradient(135deg, #667eea 0%, #764ba2 100%)`
+- **Motyw:** Jasny SaaS (--bg-body: #f0f4f8)
+- **Font:** Inter (Google Fonts)
+
+### Scheduler
+- `.date-item`, `.date-item.active` - elementy daty
+- `.time-slot`, `.time-slot.active` - sloty czasowe
+- `.existing-meeting-banner` - baner istniejącego spotkania
+- `.meeting-confirmed-panel` - panel potwierdzenia (desktop)
+- `.app-bottom-bar.confirmed` - stan potwierdzenia (mobile)
+
+### Kalendarz
+- `.dashboard-tabs`, `.dashboard-tab` - zakładki
+- `.meeting-card` - karta spotkania
+- `.cal-stat` - statystyki
 
 ## Uwagi
 - NIE używaj git w tym projekcie (brak repozytorium)
 - Przed dużymi zmianami - zrób backup do osobnego folderu
-- Oryginalna wersja (przed mobile) jest w: `partner-recruiter-original/`
-- Landing page powinien działać zarówno na desktop jak i mobile
+- localStorage jest lokalny dla przeglądarki - spotkania nie synchronizują się między urządzeniami
+- Landing page działa zarówno na desktop jak i mobile (responsive)
