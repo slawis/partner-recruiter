@@ -67,11 +67,13 @@ async function initGenerator() {
     const btnCopyLink = document.getElementById('btnCopyLink');
     const btnOpenPreview = document.getElementById('btnOpenPreview');
     const btnClearHistory = document.getElementById('btnClearHistory');
+    const btnDownloadQR = document.getElementById('btnDownloadQR');
 
     if (btnCopyEmail) btnCopyEmail.addEventListener('click', copyEmail);
     if (btnCopyLink) btnCopyLink.addEventListener('click', copyLink);
     if (btnOpenPreview) btnOpenPreview.addEventListener('click', openPreview);
     if (btnClearHistory) btnClearHistory.addEventListener('click', clearHistory);
+    if (btnDownloadQR) btnDownloadQR.addEventListener('click', downloadQR);
 }
 
 // ============ DASHBOARD TABS ============
@@ -628,6 +630,10 @@ function handleGenerateInvitation(e) {
     document.getElementById('btnCopyEmail').disabled = false;
     document.getElementById('btnCopyLink').disabled = false;
     document.getElementById('btnOpenPreview').disabled = false;
+    document.getElementById('btnDownloadQR').disabled = false;
+
+    // Generate QR code
+    generateQRCode(link);
 
     // Update preview frame
     const previewFrame = document.querySelector('.preview-frame');
@@ -949,9 +955,55 @@ function applyRoleBasedUI() {
     }
 }
 
+// ============ QR CODE GENERATION ============
+async function generateQRCode(link) {
+    const canvas = document.getElementById('qrCanvas');
+    const placeholder = document.getElementById('qrPlaceholder');
+
+    if (!canvas || typeof QRCode === 'undefined') {
+        console.error('QRCode library not loaded or canvas not found');
+        return;
+    }
+
+    try {
+        // Generate QR code
+        await QRCode.toCanvas(canvas, link, {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#1e293b',
+                light: '#ffffff'
+            }
+        });
+
+        // Show canvas, hide placeholder
+        canvas.style.display = 'block';
+        if (placeholder) placeholder.style.display = 'none';
+    } catch (err) {
+        console.error('Error generating QR code:', err);
+        showToast('Błąd generowania kodu QR', 'error');
+    }
+}
+
+function downloadQR() {
+    const canvas = document.getElementById('qrCanvas');
+    if (!canvas || !AppState.currentInvitation) return;
+
+    // Create a link and download
+    const link = document.createElement('a');
+    const partnerName = AppState.currentInvitation.partnerName || 'partner';
+    const safeName = partnerName.replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, '_');
+    link.download = `QR_${safeName}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showToast('Kod QR pobrany!', 'success');
+}
+
 // ============ GLOBAL FUNCTIONS ============
 window.deleteMeeting = deleteMeeting;
 window.deleteInvitation = deleteInvitation;
 window.updateDeleteSelectedButton = updateDeleteSelectedButton;
 window.copyInvitationLink = copyInvitationLink;
 window.openInvitationLink = openInvitationLink;
+window.downloadQR = downloadQR;
