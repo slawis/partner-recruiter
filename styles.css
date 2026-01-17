@@ -3124,6 +3124,7 @@ a:hover {
     cursor: pointer;
     transition: all var(--transition-fast);
     box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+    margin: 24px auto 0 auto; /* Wyśrodkowanie i margines górny */
 }
 
 .btn-schedule:hover:not(:disabled) {
