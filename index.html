@@ -417,60 +417,6 @@
                 </div>
 
                 <div class="settings-content">
-                    <!-- Inviters Management -->
-                    <div class="settings-section">
-                        <div class="settings-section-header">
-                            <h3>👥 Zapraszający</h3>
-                            <p>Zarządzaj osobami, które mogą wysyłać zaproszenia</p>
-                        </div>
-
-                        <!-- Add New Inviter Form -->
-                        <div class="inviter-form-card">
-                            <h4>Dodaj nowego zapraszającego</h4>
-                            <form id="addInviterForm" class="inviter-form">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="inviterName">Imię i nazwisko *</label>
-                                        <input type="text" id="inviterName" placeholder="np. Jan Kowalski" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="inviterRole">Stanowisko</label>
-                                        <input type="text" id="inviterRole" placeholder="np. Manager">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="inviterPhone">Telefon</label>
-                                        <input type="tel" id="inviterPhone" placeholder="np. 500 000 000">
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="inviterEmail">Email</label>
-                                        <input type="email" id="inviterEmail" placeholder="np. jan@firma.pl">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="inviterBio">Krótki opis (opcjonalnie)</label>
-                                    <textarea id="inviterBio" rows="2" placeholder="np. 10 lat doświadczenia w branży finansowej..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="inviterPhoto">URL zdjęcia (opcjonalnie)</label>
-                                    <input type="url" id="inviterPhoto" placeholder="https://...">
-                                </div>
-                                <button type="submit" class="btn-add-inviter">
-                                    <span>➕</span> Dodaj zapraszającego
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- Inviters List -->
-                        <div class="inviters-list-section">
-                            <h4>Lista zapraszających</h4>
-                            <div class="inviters-list" id="invitersList">
-                                <!-- Inviters will be rendered here by JS -->
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- User Management Section (Admin only) -->
                     <div class="settings-section" id="userManagementSection">
                         <div class="settings-section-header">
