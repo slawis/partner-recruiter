@@ -517,6 +517,16 @@ function handleMobileScheduleSubmit(e) {
         updateInvitationStatus(AppState.landingParams.invitationId, 'registered');
     }
 
+    // Aktualizuj statystyki partnera (tylko dla nowych spotkań)
+    if (!isUpdate && typeof findPartnerByPhone === 'function') {
+        const inviterKey = AppState.landingParams.inviterKey || '';
+        findPartnerByPhone(phone, inviterKey).then(partner => {
+            if (partner && typeof updatePartnerMeetingsCount === 'function') {
+                updatePartnerMeetingsCount(partner.id, 1);
+            }
+        }).catch(err => console.error('Error updating partner stats:', err));
+    }
+
     // Close bottom sheet
     closeBottomSheet();
 
@@ -816,6 +826,17 @@ function handleDesktopScheduleSubmit(e) {
     // Update invitation status
     if (AppState.landingParams.invitationId) {
         updateInvitationStatus(AppState.landingParams.invitationId, 'registered');
+    }
+
+    // Aktualizuj statystyki partnera (tylko dla nowych spotkań)
+    const partnerPhone = urlParams.get('p') || '';
+    if (!isUpdate && partnerPhone && typeof findPartnerByPhone === 'function') {
+        const inviterKey = urlParams.get('z') || '';
+        findPartnerByPhone(partnerPhone, inviterKey).then(partner => {
+            if (partner && typeof updatePartnerMeetingsCount === 'function') {
+                updatePartnerMeetingsCount(partner.id, 1);
+            }
+        }).catch(err => console.error('Error updating partner stats:', err));
     }
 
     // Show success modal

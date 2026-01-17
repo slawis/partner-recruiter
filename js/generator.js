@@ -618,6 +618,26 @@ function handleGenerateInvitation(e) {
         sentAt: new Date().toISOString()
     });
 
+    // Auto-zapis partnera (pośrednika)
+    if (typeof findOrCreatePartner === 'function') {
+        findOrCreatePartner({
+            name: partnerName,
+            lastName: partnerLastName,
+            company: partnerCompany,
+            nip: partnerNIP,
+            phone: partnerPhone,
+            email: partnerEmail,
+            address: partnerAddress
+        }, inviterKey).then(() => {
+            // Aktualizuj badge pośredników
+            if (typeof updateNavigationBadges === 'function') {
+                updateNavigationBadges();
+            }
+        }).catch(err => {
+            console.error('Error saving partner:', err);
+        });
+    }
+
     // Update UI
     updateStatsDisplay();
     renderHistory();

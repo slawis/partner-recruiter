@@ -20,6 +20,7 @@
     <!-- Modular CSS -->
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/generator.css">
+    <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/landing.css">
     <link rel="stylesheet" href="css/scheduler.css">
     <link rel="stylesheet" href="css/auth.css">
@@ -93,64 +94,187 @@
 
     <!-- ========== TRYB GENERATOR (Panel Managera) ========== -->
     <div id="generatorMode" class="generator-mode" style="display: none;">
-        <header class="generator-header">
-            <div class="logo">
-                <span class="logo-icon">⚡</span>
-                <span class="logo-text">Partner Recruiter</span>
-            </div>
-            <div class="header-actions">
-                <!-- Filtr dat dla statystyk -->
-                <div class="stats-filter">
-                    <div class="filter-pills">
-                        <button type="button" class="filter-pill active" data-filter="all">Wszystko</button>
-                        <button type="button" class="filter-pill" data-filter="today">Dziś</button>
-                        <button type="button" class="filter-pill" data-filter="week">Ten tydzień</button>
-                        <button type="button" class="filter-pill" data-filter="month">Ten miesiąc</button>
-                        <button type="button" class="filter-pill" data-filter="custom">
-                            <span>📅</span>
-                            <span class="custom-range-text">Zakres</span>
+        <div class="app-layout">
+            <!-- Sidebar Overlay (Mobile) -->
+            <div class="sidebar-overlay"></div>
+
+            <!-- Sidebar Navigation -->
+            <aside class="app-sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-logo">
+                        <span class="sidebar-logo-icon">⚡</span>
+                        <span class="sidebar-logo-text">Partner Recruiter</span>
+                    </div>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <!-- Main Section -->
+                    <div class="nav-section">
+                        <div class="nav-section-title">Menu główne</div>
+                        <a href="#" class="nav-item active" data-section="dashboard">
+                            <span class="nav-item-icon">📊</span>
+                            <span class="nav-item-text">Dashboard</span>
+                        </a>
+                        <a href="#" class="nav-item" data-section="generator">
+                            <span class="nav-item-icon">✉️</span>
+                            <span class="nav-item-text">Generator</span>
+                        </a>
+                        <a href="#" class="nav-item" data-section="historia">
+                            <span class="nav-item-icon">📋</span>
+                            <span class="nav-item-text">Historia</span>
+                            <span class="nav-item-badge" id="navHistoriaBadge">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-section="spotkania">
+                            <span class="nav-item-icon">📅</span>
+                            <span class="nav-item-text">Spotkania</span>
+                            <span class="nav-item-badge" id="navSpotkaniaBadge">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-section="posrednicy">
+                            <span class="nav-item-icon">👥</span>
+                            <span class="nav-item-text">Pośrednicy</span>
+                            <span class="nav-item-badge" id="navPosrednicyBadge">0</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-divider"></div>
+
+                    <!-- Admin Section -->
+                    <div class="nav-section admin-section" id="adminNavSection">
+                        <div class="nav-section-title">Administracja</div>
+                        <a href="#" class="nav-item" data-section="doradcy">
+                            <span class="nav-item-icon">👥</span>
+                            <span class="nav-item-text">Doradcy</span>
+                            <span class="nav-item-badge" id="navDoradcyBadge">0</span>
+                        </a>
+                        <a href="#" class="nav-item" data-section="uzytkownicy">
+                            <span class="nav-item-icon">👤</span>
+                            <span class="nav-item-text">Użytkownicy</span>
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="sidebar-footer">
+                    <div class="sidebar-user">
+                        <div class="sidebar-user-avatar" id="sidebarUserAvatar">A</div>
+                        <div class="sidebar-user-info">
+                            <span class="sidebar-user-name" id="sidebarUserName">-</span>
+                            <span class="sidebar-user-role" id="sidebarUserRole">Admin</span>
+                        </div>
+                        <button type="button" class="sidebar-logout-btn" id="btnLogout" title="Wyloguj">
+                            🚪
                         </button>
                     </div>
-                    <div class="custom-date-range" id="customDateRange" style="display: none;">
-                        <input type="date" id="filterDateFrom" title="Od">
-                        <span class="date-separator">–</span>
-                        <input type="date" id="filterDateTo" title="Do">
-                        <button type="button" class="btn-apply-range" id="btnApplyRange">OK</button>
-                    </div>
                 </div>
-                <div class="header-stats">
-                    <div class="stat-item">
-                        <span class="stat-value" id="statSent">0</span>
-                        <span class="stat-label">Wysłanych</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="statOpened">0</span>
-                        <span class="stat-label">Otwartych</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-value" id="statConverted">0</span>
-                        <span class="stat-label">Rejestracji</span>
-                    </div>
-                </div>
-                <button type="button" class="btn-settings" id="btnOpenSettings">
-                    <span class="settings-icon">⚙️</span>
-                    <span>Ustawienia</span>
-                </button>
-                <div class="user-menu">
-                    <span class="user-info" id="userInfo">
-                        <span class="user-role" id="userRole">Admin</span>
-                        <span class="user-name" id="userName">-</span>
-                    </span>
-                    <button type="button" class="btn-logout" id="btnLogout" title="Wyloguj">
-                        🚪
-                    </button>
-                </div>
-            </div>
-        </header>
+            </aside>
 
-        <main class="generator-main">
-            <div class="generator-container">
-                <!-- Lewa strona - Formularz -->
+            <!-- Main Content Area -->
+            <div class="app-main">
+                <!-- Top Bar -->
+                <header class="app-topbar">
+                    <div class="topbar-left">
+                        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                        <div>
+                            <h1 class="topbar-title">Dashboard</h1>
+                            <p class="topbar-subtitle">Przegląd statystyk i aktywności</p>
+                        </div>
+                    </div>
+                    <div class="topbar-right">
+                        <!-- Stats filter (used in dashboard and history) -->
+                        <div class="stats-filter" id="statsFilterBar">
+                            <div class="filter-pills">
+                                <button type="button" class="filter-pill active" data-filter="all">Wszystko</button>
+                                <button type="button" class="filter-pill" data-filter="today">Dziś</button>
+                                <button type="button" class="filter-pill" data-filter="week">Tydzień</button>
+                                <button type="button" class="filter-pill" data-filter="month">Miesiąc</button>
+                                <button type="button" class="filter-pill" data-filter="custom">
+                                    <span>📅</span>
+                                </button>
+                            </div>
+                            <div class="custom-date-range" id="customDateRange" style="display: none;">
+                                <input type="date" id="filterDateFrom" title="Od">
+                                <span class="date-separator">–</span>
+                                <input type="date" id="filterDateTo" title="Do">
+                                <button type="button" class="btn-apply-range" id="btnApplyRange">OK</button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- ===== SECTION: DASHBOARD ===== -->
+                <section id="section-dashboard" class="app-section active">
+                    <div class="dashboard-stats-grid">
+                        <div class="dashboard-stat-card primary">
+                            <div class="stat-card-header">
+                                <span class="stat-card-icon">📤</span>
+                            </div>
+                            <div class="stat-card-value" id="statDashSent">0</div>
+                            <div class="stat-card-label">Wysłanych zaproszeń</div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-icon">👁️</span>
+                            </div>
+                            <div class="stat-card-value" id="statDashOpened">0</div>
+                            <div class="stat-card-label">Otwartych</div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-icon">✅</span>
+                            </div>
+                            <div class="stat-card-value" id="statDashRegistered">0</div>
+                            <div class="stat-card-label">Rejestracji</div>
+                        </div>
+                        <div class="dashboard-stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-icon">📅</span>
+                            </div>
+                            <div class="stat-card-value" id="statDashMeetings">0</div>
+                            <div class="stat-card-label">Spotkań</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-widgets-row">
+                        <div class="dashboard-widget">
+                            <div class="widget-header">
+                                <h3 class="widget-title">Ostatnie zaproszenia</h3>
+                                <a href="#" onclick="switchSection('historia'); return false;" style="color: var(--primary); font-size: 13px;">Zobacz wszystkie →</a>
+                            </div>
+                            <div class="history-table-wrapper">
+                                <table class="history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Pośrednik</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboardHistoryBody">
+                                        <tr class="empty-row">
+                                            <td colspan="3">Brak zaproszeń</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="dashboard-widget">
+                            <div class="widget-header">
+                                <h3 class="widget-title">Nadchodzące spotkania</h3>
+                                <a href="#" onclick="switchSection('spotkania'); return false;" style="color: var(--primary); font-size: 13px;">Kalendarz →</a>
+                            </div>
+                            <div id="dashboardMeetings" class="meetings-list">
+                                <div class="meetings-empty" style="padding: 30px;">
+                                    <span class="empty-icon">📅</span>
+                                    <p>Brak spotkań</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SECTION: GENERATOR ===== -->
+                <section id="section-generator" class="app-section">
+                    <div class="generator-container">
+                        <!-- Lewa strona - Formularz -->
                 <div class="generator-form-section">
                     <div class="section-header">
                         <h2>Nowe zaproszenie</h2>
@@ -347,68 +471,58 @@
                                 <span class="copy-icon">🚀</span>
                                 Otwórz stronę w nowej karcie
                             </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                    </div>
+                </section>
 
-            <!-- History & Calendar Section with Tabs -->
-            <div class="dashboard-section">
-                <div class="dashboard-tabs">
-                    <button class="dashboard-tab active" data-tab="history">
-                        <span class="tab-icon">📋</span>
-                        <span class="tab-text">Historia zaproszeń</span>
-                        <span class="tab-badge" id="historyCount">0</span>
-                    </button>
-                    <button class="dashboard-tab" data-tab="calendar">
-                        <span class="tab-icon">📅</span>
-                        <span class="tab-text">Kalendarz spotkań</span>
-                        <span class="tab-badge" id="meetingsCount">0</span>
-                    </button>
-                </div>
-
-                <!-- Tab: Historia zaproszeń -->
-                <div class="dashboard-tab-content active" id="tabHistory">
-                    <div class="tab-header">
-                        <div class="tab-title">
-                            <h3>Historia zaproszeń</h3>
-                            <p>Lista wszystkich wygenerowanych zaproszeń</p>
+                <!-- ===== SECTION: HISTORIA ===== -->
+                <section id="section-historia" class="app-section">
+                    <div class="section-header-bar">
+                        <div>
+                            <h2 class="section-title">Historia zaproszeń</h2>
+                            <p class="section-subtitle">Lista wszystkich wygenerowanych zaproszeń</p>
                         </div>
-                        <button class="btn-delete-selected" id="btnDeleteSelected" style="display: none;">
-                            <span>🗑️</span> Usuń zaznaczone (<span id="selectedCount">0</span>)
-                        </button>
-                        <button class="btn-clear-history" id="btnClearHistory">
-                            <span>🗑️</span> Wyczyść wszystko
-                        </button>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn-delete-selected" id="btnDeleteSelected" style="display: none;">
+                                <span>🗑️</span> Usuń zaznaczone (<span id="selectedCount">0</span>)
+                            </button>
+                            <button class="btn-clear-history" id="btnClearHistory">
+                                <span>🗑️</span> Wyczyść wszystko
+                            </button>
+                        </div>
                     </div>
-                    <div class="history-table-wrapper">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th class="th-checkbox"><input type="checkbox" id="selectAllInvitations" title="Zaznacz wszystkie"></th>
-                                    <th>Data</th>
-                                    <th>Pośrednik</th>
-                                    <th>Zapraszający</th>
-                                    <th>Styl</th>
-                                    <th>Status</th>
-                                    <th>Akcje</th>
-                                </tr>
-                            </thead>
-                            <tbody id="historyBody">
-                                <tr class="empty-row">
-                                    <td colspan="7">Brak wysłanych zaproszeń</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="dashboard-widget" style="padding: 0;">
+                        <div class="history-table-wrapper">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th class="th-checkbox"><input type="checkbox" id="selectAllInvitations" title="Zaznacz wszystkie"></th>
+                                        <th>Data</th>
+                                        <th>Pośrednik</th>
+                                        <th>Zapraszający</th>
+                                        <th>Styl</th>
+                                        <th>Status</th>
+                                        <th>Akcje</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="historyBody">
+                                    <tr class="empty-row">
+                                        <td colspan="7">Brak wysłanych zaproszeń</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <!-- Tab: Kalendarz spotkań -->
-                <div class="dashboard-tab-content" id="tabCalendar">
-                    <div class="tab-header">
-                        <div class="tab-title">
-                            <h3>Kalendarz spotkań</h3>
-                            <p>Spotkania umówione przez partnerów</p>
+                <!-- ===== SECTION: SPOTKANIA ===== -->
+                <section id="section-spotkania" class="app-section">
+                    <div class="section-header-bar">
+                        <div>
+                            <h2 class="section-title">Kalendarz spotkań</h2>
+                            <p class="section-subtitle">Spotkania umówione przez partnerów</p>
                         </div>
                         <div class="calendar-filters">
                             <button class="filter-btn active" data-filter="all">Wszystkie</button>
@@ -417,24 +531,22 @@
                         </div>
                     </div>
 
-                    <div class="calendar-view">
-                        <!-- Calendar Stats -->
-                        <div class="calendar-stats">
-                            <div class="cal-stat">
-                                <span class="cal-stat-value" id="statTodayMeetings">0</span>
-                                <span class="cal-stat-label">Dziś</span>
-                            </div>
-                            <div class="cal-stat">
-                                <span class="cal-stat-value" id="statWeekMeetings">0</span>
-                                <span class="cal-stat-label">Ten tydzień</span>
-                            </div>
-                            <div class="cal-stat">
-                                <span class="cal-stat-value" id="statTotalMeetings">0</span>
-                                <span class="cal-stat-label">Łącznie</span>
-                            </div>
+                    <div class="calendar-stats">
+                        <div class="cal-stat">
+                            <span class="cal-stat-value" id="statTodayMeetings">0</span>
+                            <span class="cal-stat-label">Dziś</span>
                         </div>
+                        <div class="cal-stat">
+                            <span class="cal-stat-value" id="statWeekMeetings">0</span>
+                            <span class="cal-stat-label">Ten tydzień</span>
+                        </div>
+                        <div class="cal-stat">
+                            <span class="cal-stat-value" id="statTotalMeetings">0</span>
+                            <span class="cal-stat-label">Łącznie</span>
+                        </div>
+                    </div>
 
-                        <!-- Meetings List -->
+                    <div class="dashboard-widget" style="margin-top: 24px;">
                         <div class="meetings-list" id="meetingsList">
                             <div class="meetings-empty">
                                 <span class="empty-icon">📅</span>
@@ -443,98 +555,203 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </main>
+                </section>
 
-        <!-- Settings Modal -->
-        <div id="settingsModal" class="settings-modal">
-            <div class="settings-panel">
-                <div class="settings-header">
-                    <h2>⚙️ Ustawienia</h2>
-                    <button type="button" class="btn-close-settings" id="btnCloseSettings">✕</button>
-                </div>
-
-                <div class="settings-content">
-                    <!-- User Management Section (Admin only) -->
-                    <div class="settings-section" id="userManagementSection">
-                        <div class="settings-section-header">
-                            <h3>🔐 Zarządzanie użytkownikami</h3>
-                            <p>Dodawaj i zarządzaj kontami administratorów i doradców</p>
+                <!-- ===== SECTION: POŚREDNICY ===== -->
+                <section id="section-posrednicy" class="app-section">
+                    <div class="section-header-bar">
+                        <div>
+                            <h2 class="section-title">Pośrednicy</h2>
+                            <p class="section-subtitle">Zarządzaj swoimi pośrednikami</p>
                         </div>
+                        <button class="btn-generate" onclick="openAddPartnerModal()" style="padding: 10px 20px;">
+                            <span>➕</span> Dodaj pośrednika
+                        </button>
+                    </div>
 
-                        <!-- Add New User Form -->
-                        <div class="inviter-form-card">
-                            <h4>Dodaj nowego użytkownika</h4>
-                            <form id="addUserForm" class="inviter-form">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="newUserName">Imię i nazwisko *</label>
-                                        <input type="text" id="newUserName" placeholder="np. Jan Kowalski" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="newUserPosition">Stanowisko</label>
-                                        <input type="text" id="newUserPosition" placeholder="np. Manager">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="newUserEmail">Email (login) *</label>
-                                        <input type="email" id="newUserEmail" placeholder="np. jan@firma.pl" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="newUserPhone">Telefon</label>
-                                        <input type="tel" id="newUserPhone" placeholder="np. 500 000 000">
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="newUserRole">Rola w systemie *</label>
-                                        <select id="newUserRole" required>
-                                            <option value="doradca">Doradca</option>
-                                            <option value="admin">Administrator</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="newUserKey">Klucz (do linków)</label>
-                                        <input type="text" id="newUserKey" placeholder="np. jan (opcjonalnie)">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="newUserBio">Krótki opis (opcjonalnie)</label>
-                                    <textarea id="newUserBio" rows="2" placeholder="np. 10 lat doświadczenia w branży finansowej..."></textarea>
-                                </div>
-                                <div class="form-group">
-                                    <label for="newUserPhoto">URL zdjęcia (opcjonalnie)</label>
-                                    <input type="url" id="newUserPhoto" placeholder="https://...">
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="newUserPassword">Hasło *</label>
-                                        <input type="password" id="newUserPassword" placeholder="Min. 6 znaków" minlength="6" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="newUserPasswordConfirm">Potwierdź hasło *</label>
-                                        <input type="password" id="newUserPasswordConfirm" placeholder="Powtórz hasło" minlength="6" required>
-                                    </div>
-                                </div>
-                                <div id="addUserError" class="form-error" style="display: none;"></div>
-                                <div id="addUserSuccess" class="form-success" style="display: none;"></div>
-                                <button type="submit" class="btn-add-inviter" id="btnAddUser">
-                                    <span>➕</span> Dodaj użytkownika
-                                </button>
-                            </form>
+                    <div class="partners-filters">
+                        <div class="filter-group">
+                            <select id="partnersStatusFilter" class="filter-select">
+                                <option value="all">Wszystkie statusy</option>
+                                <option value="lead">Lead</option>
+                                <option value="contacted">Skontaktowano</option>
+                                <option value="meeting">Spotkanie</option>
+                                <option value="converted">Współpraca</option>
+                                <option value="rejected">Odmowa</option>
+                            </select>
                         </div>
-
-                        <!-- Users List -->
-                        <div class="inviters-list-section">
-                            <h4>Lista użytkowników</h4>
-                            <div class="users-list" id="usersList">
-                                <!-- Users will be rendered here by JS -->
-                            </div>
+                        <div class="filter-group hidden" id="partnersInviterFilterGroup">
+                            <select id="partnersInviterFilter" class="filter-select">
+                                <option value="all">Wszyscy doradcy</option>
+                            </select>
+                        </div>
+                        <div class="filter-group search-group">
+                            <input type="text" id="partnersSearchInput" class="filter-input" placeholder="Szukaj pośrednika...">
                         </div>
                     </div>
+
+                    <div class="partners-grid" id="partnersGrid">
+                        <div class="partners-empty">
+                            <span class="empty-icon">👥</span>
+                            <p>Brak pośredników</p>
+                            <small>Pośrednicy pojawią się tutaj po wygenerowaniu zaproszeń lub dodaniu ręcznym</small>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== SECTION: DORADCY (Admin) ===== -->
+                <section id="section-doradcy" class="app-section">
+                    <div class="section-header-bar">
+                        <div>
+                            <h2 class="section-title">Zarządzanie doradcami</h2>
+                            <p class="section-subtitle">Dodawaj i edytuj doradców</p>
+                        </div>
+                    </div>
+                    <div class="doradcy-grid" id="doradcyGrid">
+                        <!-- Doradcy will be rendered by JS -->
+                    </div>
+                </section>
+
+                <!-- ===== SECTION: UŻYTKOWNICY (Admin) ===== -->
+                <section id="section-uzytkownicy" class="app-section">
+                    <div class="section-header-bar">
+                        <div>
+                            <h2 class="section-title">Zarządzanie użytkownikami</h2>
+                            <p class="section-subtitle">Administracja kontami</p>
+                        </div>
+                        <button class="btn-generate" onclick="openAddUserModal()" style="padding: 10px 20px;">
+                            <span>➕</span> Dodaj użytkownika
+                        </button>
+                    </div>
+                    <div class="users-table-wrapper">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Użytkownik</th>
+                                    <th>Email</th>
+                                    <th>Telefon</th>
+                                    <th>Rola</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr class="empty-row">
+                                    <td colspan="5">Ładowanie...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </div> <!-- end app-main -->
+        </div> <!-- end app-layout -->
+
+        <!-- Add Doradca Modal -->
+        <div id="addDoradcaModal" class="modal edit-inviter-modal">
+            <div class="modal-content edit-inviter-content">
+                <div class="modal-header">
+                    <h3>➕ Dodaj doradcę</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeAddDoradcaModal()">✕</button>
                 </div>
+                <form id="addDoradcaForm" class="inviter-form" onsubmit="handleAddDoradca(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addDoradcaName">Imię i nazwisko *</label>
+                            <input type="text" id="addDoradcaName" placeholder="np. Jan Kowalski" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addDoradcaRole">Stanowisko</label>
+                            <input type="text" id="addDoradcaRole" placeholder="np. Manager">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addDoradcaPhone">Telefon</label>
+                            <input type="tel" id="addDoradcaPhone" placeholder="np. 500 000 000">
+                        </div>
+                        <div class="form-group">
+                            <label for="addDoradcaEmail">Email</label>
+                            <input type="email" id="addDoradcaEmail" placeholder="np. jan@firma.pl">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="addDoradcaBio">Krótki opis (opcjonalnie)</label>
+                        <textarea id="addDoradcaBio" rows="2" placeholder="np. 10 lat doświadczenia w branży finansowej..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeAddDoradcaModal()">Anuluj</button>
+                        <button type="submit" class="btn-save">➕ Dodaj doradcę</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add User Modal -->
+        <div id="addUserModal" class="modal edit-user-modal">
+            <div class="modal-content edit-user-content">
+                <div class="modal-header">
+                    <h3>➕ Dodaj użytkownika</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeAddUserModal()">✕</button>
+                </div>
+                <form id="addUserForm" class="inviter-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUserName">Imię i nazwisko *</label>
+                            <input type="text" id="newUserName" placeholder="np. Jan Kowalski" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newUserPosition">Stanowisko</label>
+                            <input type="text" id="newUserPosition" placeholder="np. Manager">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUserEmail">Email (login) *</label>
+                            <input type="email" id="newUserEmail" placeholder="np. jan@firma.pl" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newUserPhone">Telefon</label>
+                            <input type="tel" id="newUserPhone" placeholder="np. 500 000 000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUserRole">Rola w systemie *</label>
+                            <select id="newUserRole" required>
+                                <option value="doradca">Doradca</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="newUserKey">Klucz (do linków)</label>
+                            <input type="text" id="newUserKey" placeholder="np. jan (opcjonalnie)">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserBio">Krótki opis (opcjonalnie)</label>
+                        <textarea id="newUserBio" rows="2" placeholder="np. 10 lat doświadczenia w branży finansowej..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserPhoto">URL zdjęcia (opcjonalnie)</label>
+                        <input type="url" id="newUserPhoto" placeholder="https://...">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newUserPassword">Hasło *</label>
+                            <input type="password" id="newUserPassword" placeholder="Min. 6 znaków" minlength="6" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newUserPasswordConfirm">Potwierdź hasło *</label>
+                            <input type="password" id="newUserPasswordConfirm" placeholder="Powtórz hasło" minlength="6" required>
+                        </div>
+                    </div>
+                    <div id="addUserError" class="form-error" style="display: none;"></div>
+                    <div id="addUserSuccess" class="form-success" style="display: none;"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeAddUserModal()">Anuluj</button>
+                        <button type="submit" class="btn-save" id="btnAddUser">➕ Dodaj użytkownika</button>
+                    </div>
+                </form>
             </div>
         </div>
 
@@ -651,6 +868,138 @@
                     <div class="modal-actions">
                         <button type="button" class="btn-cancel" onclick="closeEditUserModal()">Anuluj</button>
                         <button type="submit" class="btn-save" id="btnSaveUser"><span>💾</span> Zapisz zmiany</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Partner Modal -->
+        <div id="addPartnerModal" class="modal edit-inviter-modal">
+            <div class="modal-content edit-inviter-content">
+                <div class="modal-header">
+                    <h3>➕ Dodaj pośrednika</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeAddPartnerModal()">✕</button>
+                </div>
+                <form id="addPartnerForm" class="inviter-form" onsubmit="handleAddPartner(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addPartnerName">Imię *</label>
+                            <input type="text" id="addPartnerName" placeholder="np. Jan" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addPartnerLastName">Nazwisko</label>
+                            <input type="text" id="addPartnerLastName" placeholder="np. Kowalski">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addPartnerCompany">Firma</label>
+                            <input type="text" id="addPartnerCompany" placeholder="np. Finanse Plus">
+                        </div>
+                        <div class="form-group">
+                            <label for="addPartnerNIP">NIP</label>
+                            <input type="text" id="addPartnerNIP" placeholder="np. 1234567890" maxlength="13">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="addPartnerPhone">Telefon</label>
+                            <input type="tel" id="addPartnerPhone" placeholder="np. 500 000 000">
+                        </div>
+                        <div class="form-group">
+                            <label for="addPartnerEmail">Email</label>
+                            <input type="email" id="addPartnerEmail" placeholder="np. jan@firma.pl">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="addPartnerAddress">Adres</label>
+                        <input type="text" id="addPartnerAddress" placeholder="np. ul. Przykładowa 10, 00-001 Warszawa">
+                    </div>
+                    <div class="form-group">
+                        <label for="addPartnerNotes">Notatki</label>
+                        <textarea id="addPartnerNotes" rows="2" placeholder="Opcjonalne notatki..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeAddPartnerModal()">Anuluj</button>
+                        <button type="submit" class="btn-save">➕ Dodaj pośrednika</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Partner Modal -->
+        <div id="editPartnerModal" class="modal edit-inviter-modal">
+            <div class="modal-content edit-inviter-content">
+                <div class="modal-header">
+                    <h3>✏️ Edytuj pośrednika</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeEditPartnerModal()">✕</button>
+                </div>
+                <form id="editPartnerForm" class="inviter-form" onsubmit="handleEditPartner(event)">
+                    <input type="hidden" id="editPartnerId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPartnerName">Imię *</label>
+                            <input type="text" id="editPartnerName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPartnerLastName">Nazwisko</label>
+                            <input type="text" id="editPartnerLastName">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPartnerCompany">Firma</label>
+                            <input type="text" id="editPartnerCompany">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPartnerNIP">NIP</label>
+                            <input type="text" id="editPartnerNIP" maxlength="13">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPartnerPhone">Telefon</label>
+                            <input type="tel" id="editPartnerPhone">
+                        </div>
+                        <div class="form-group">
+                            <label for="editPartnerEmail">Email</label>
+                            <input type="email" id="editPartnerEmail">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPartnerAddress">Adres</label>
+                        <input type="text" id="editPartnerAddress">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeEditPartnerModal()">Anuluj</button>
+                        <button type="submit" class="btn-save">💾 Zapisz zmiany</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Partner Notes Modal -->
+        <div id="partnerNotesModal" class="modal edit-inviter-modal">
+            <div class="modal-content edit-inviter-content">
+                <div class="modal-header">
+                    <h3>📝 Notatki</h3>
+                    <button type="button" class="btn-close-modal" onclick="closePartnerNotesModal()">✕</button>
+                </div>
+                <form id="partnerNotesForm" class="inviter-form" onsubmit="handleAddPartnerNote(event)">
+                    <input type="hidden" id="partnerNotesId">
+                    <div class="form-group">
+                        <label>Historia notatek</label>
+                        <div id="partnerNotesContent" class="notes-content" style="background: var(--bg-body); padding: 12px; border-radius: 8px; min-height: 100px; max-height: 200px; overflow-y: auto; font-size: 13px; line-height: 1.6;">
+                            <span style="color: var(--text-muted);">Brak notatek</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="partnerNewNote">Dodaj notatkę</label>
+                        <textarea id="partnerNewNote" rows="3" placeholder="Wpisz nową notatkę..."></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closePartnerNotesModal()">Zamknij</button>
+                        <button type="submit" class="btn-save">📝 Dodaj notatkę</button>
                     </div>
                 </form>
             </div>
@@ -1736,6 +2085,8 @@
     <script src="js/scheduler.js"></script>
     <script src="js/landing.js"></script>
     <script src="js/inviters.js"></script>
+    <script src="js/partners.js"></script>
+    <script src="js/navigation.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

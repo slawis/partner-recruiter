@@ -401,8 +401,73 @@ async function toggleUserSuspension(userId) {
     }
 }
 
+// ============ ADD USER MODAL ============
+function openAddUserModal() {
+    const modal = document.getElementById('addUserModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeAddUserModal() {
+    const modal = document.getElementById('addUserModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        // Reset form
+        document.getElementById('addUserForm')?.reset();
+        document.getElementById('addUserError').style.display = 'none';
+        document.getElementById('addUserSuccess').style.display = 'none';
+    }
+}
+
+// ============ RENDER USERS TABLE ============
+function renderUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+
+    if (UsersState.users.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="5">Brak użytkowników</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = UsersState.users.map(user => {
+        const isCurrentUser = user.id === getCurrentUserId();
+        const isSuspended = user.is_suspended;
+
+        return `
+            <tr data-user-id="${user.id}" class="${isSuspended ? 'suspended' : ''}">
+                <td>
+                    <strong>${user.name || 'Bez nazwy'}</strong>
+                    ${isCurrentUser ? '<span style="color: var(--primary);">(Ty)</span>' : ''}
+                    ${user.position ? `<br><small style="color: var(--text-muted);">${user.position}</small>` : ''}
+                </td>
+                <td>${user.email}</td>
+                <td>${user.phone || '-'}</td>
+                <td>
+                    <span class="user-role-badge ${user.role}">
+                        ${user.role === 'admin' ? 'Admin' : 'Doradca'}
+                    </span>
+                    ${isSuspended ? '<span class="user-role-badge" style="background: var(--danger-bg); color: var(--danger);">Zawieszony</span>' : ''}
+                </td>
+                <td>
+                    ${!isCurrentUser ? `
+                        <button type="button" class="action-btn" onclick="openEditUserModal('${user.id}')" title="Edytuj">✏️</button>
+                        <button type="button" class="action-btn" onclick="toggleUserSuspension('${user.id}')" title="${isSuspended ? 'Aktywuj' : 'Zawieś'}">${isSuspended ? '✅' : '⏸️'}</button>
+                        <button type="button" class="action-btn action-btn-delete" onclick="deleteUser('${user.id}')" title="Usuń">🗑️</button>
+                    ` : '-'}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
 // ============ GLOBAL FUNCTIONS ============
 window.deleteUser = deleteUser;
 window.openEditUserModal = openEditUserModal;
 window.closeEditUserModal = closeEditUserModal;
 window.toggleUserSuspension = toggleUserSuspension;
+window.openAddUserModal = openAddUserModal;
+window.closeAddUserModal = closeAddUserModal;
+window.renderUsersTable = renderUsersTable;
