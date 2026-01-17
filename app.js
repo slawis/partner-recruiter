@@ -247,6 +247,7 @@ function initLoginForm() {
 
             try {
                 await handleLogin(email, password);
+                await loadState(); // Załaduj dane po zalogowaniu
                 hideLoginScreen();
                 await initGenerator();
             } catch (error) {
@@ -328,17 +329,17 @@ let AppState = {
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', async () => {
     detectMode();
-    await loadState();
 
     if (AppState.mode === 'generator') {
         // Inicjalizuj formularz logowania
         initLoginForm();
 
-        // Sprawdź autentykację
+        // Sprawdź autentykację PRZED ładowaniem danych
         const isAuthenticated = await initAuth();
 
         if (isAuthenticated) {
-            // Użytkownik zalogowany - pokaż generator
+            // Użytkownik zalogowany - załaduj dane i pokaż generator
+            await loadState();
             hideLoginScreen();
             await initGenerator();
         } else {
@@ -346,8 +347,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             showLoginScreen();
         }
     } else {
-        // Landing mode - bez logowania
+        // Landing mode - bez logowania, załaduj dane
         document.getElementById('loginScreen')?.classList.add('hidden');
+        await loadState();
         initLanding();
     }
 });
