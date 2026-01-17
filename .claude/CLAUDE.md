@@ -49,8 +49,31 @@ partner-recruiter/
 - `zb` - bio zapraszającego
 - `zph` - URL zdjęcia zapraszającego
 
-## localStorage Keys
-- `partnerRecruiterInviters` - lista zapraszających (doradców)
+## Supabase - Baza danych
+
+### Konfiguracja
+- **URL:** `https://rgcvncpmcmqskrybobbd.supabase.co`
+- **Anon Key:** w pliku `app.js`
+
+### Tabele
+| Tabela | Opis |
+|--------|------|
+| `inviters` | Doradcy/zapraszający (id, key, name, role, phone, email, bio, photo_url) |
+| `invitations` | Historia zaproszeń (id, inviter_key, partner_name, status, link, sent_at) |
+| `meetings` | Umówione spotkania (id, invitation_id, partner_name, meeting_date, meeting_time, method) |
+
+### Funkcje Supabase
+- `getSupabase()` - inicjalizacja klienta
+- `loadInviters()` / `saveInviters()` - zarządzanie doradcami
+- `saveInvitationToSupabase()` - zapis zaproszenia
+- `trackOpening()` / `updateInvitationStatus()` - śledzenie statusów
+- `getMeetings()` / `saveMeetingToSupabase()` - zarządzanie spotkaniami
+
+### Fallback
+Wszystkie funkcje mają fallback do localStorage - jeśli Supabase niedostępne, dane zapisują się lokalnie.
+
+## localStorage Keys (backup)
+- `recruiter_inviters` - lista zapraszających (doradców)
 - `recruiter_history` - historia wygenerowanych zaproszeń
 - `scheduledMeetings` - umówione spotkania (wspólne dla landing i kalendarza)
 
@@ -131,7 +154,7 @@ partner-recruiter/
 - `.cal-stat` - statystyki
 
 ## Uwagi
-- NIE używaj git w tym projekcie (brak repozytorium)
-- Przed dużymi zmianami - zrób backup do osobnego folderu
-- localStorage jest lokalny dla przeglądarki - spotkania nie synchronizują się między urządzeniami
+- Projekt używa Git - repozytorium: https://github.com/slawis/partner-recruiter
+- Dane synchronizują się przez Supabase między urządzeniami
+- localStorage służy jako backup gdy Supabase niedostępne
 - Landing page działa zarówno na desktop jak i mobile (responsive)
