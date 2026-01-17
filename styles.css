@@ -7022,6 +7022,62 @@ a:hover {
     margin: 0;
 }
 
+/* ===== PASSWORD RESET ===== */
+.forgot-password-link,
+.back-to-login-link {
+    display: block;
+    text-align: center;
+    margin-top: var(--spacing-md);
+    font-size: 13px;
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.forgot-password-link:hover,
+.back-to-login-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
+
+.form-description {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    line-height: 1.5;
+}
+
+.login-message {
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.login-message.success {
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success);
+}
+
+.login-message.error {
+    background: var(--danger-bg);
+    border: 1px solid var(--danger-border);
+    color: var(--danger);
+}
+
+.login-success {
+    padding: 12px 16px;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    border-radius: var(--radius-md);
+    color: var(--success);
+    font-size: 13px;
+    text-align: center;
+}
+
 /* ===== USER MENU (HEADER) ===== */
 .user-menu {
     display: flex;

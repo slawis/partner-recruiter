@@ -27,8 +27,10 @@
             <div class="login-header">
                 <span class="login-logo">⚡</span>
                 <h1>Partner Recruiter</h1>
-                <p>Zaloguj się do panelu</p>
+                <p id="loginHeaderText">Zaloguj się do panelu</p>
             </div>
+
+            <!-- Formularz logowania -->
             <form id="loginForm" class="login-form">
                 <div class="form-group">
                     <label for="loginEmail">Email</label>
@@ -42,7 +44,41 @@
                 <button type="submit" class="btn-login" id="btnLogin">
                     <span>Zaloguj się</span>
                 </button>
+                <a href="#" class="forgot-password-link" id="forgotPasswordLink">Nie pamiętam hasła</a>
             </form>
+
+            <!-- Formularz przypomnienia hasła -->
+            <form id="forgotPasswordForm" class="login-form" style="display: none;">
+                <p class="form-description">Podaj swój adres email, a wyślemy Ci link do zresetowania hasła.</p>
+                <div class="form-group">
+                    <label for="resetEmail">Email</label>
+                    <input type="email" id="resetEmail" placeholder="twoj@email.pl" required>
+                </div>
+                <div id="resetMessage" class="login-message" style="display: none;"></div>
+                <button type="submit" class="btn-login" id="btnResetPassword">
+                    <span>Wyślij link resetujący</span>
+                </button>
+                <a href="#" class="back-to-login-link" id="backToLoginLink">← Wróć do logowania</a>
+            </form>
+
+            <!-- Formularz ustawienia nowego hasła -->
+            <form id="newPasswordForm" class="login-form" style="display: none;">
+                <p class="form-description">Ustaw nowe hasło dla swojego konta.</p>
+                <div class="form-group">
+                    <label for="newPassword">Nowe hasło</label>
+                    <input type="password" id="newPassword" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Potwierdź hasło</label>
+                    <input type="password" id="confirmPassword" placeholder="••••••••" minlength="6" required>
+                </div>
+                <div id="newPasswordError" class="login-error" style="display: none;"></div>
+                <div id="newPasswordSuccess" class="login-success" style="display: none;"></div>
+                <button type="submit" class="btn-login" id="btnSetNewPassword">
+                    <span>Ustaw nowe hasło</span>
+                </button>
+            </form>
+
             <div class="login-footer">
                 <p>posrednik.app © 2026</p>
             </div>
