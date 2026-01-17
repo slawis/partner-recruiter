@@ -506,6 +506,22 @@ function initUserManagement() {
             await handleAddUser();
         });
     }
+
+    // Obsługa formularza edycji użytkownika
+    const editUserForm = document.getElementById('editUserForm');
+    if (editUserForm) {
+        editUserForm.addEventListener('submit', handleEditUser);
+    }
+
+    // Zamknij modal po kliknięciu poza nim
+    const editModal = document.getElementById('editUserModal');
+    if (editModal) {
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                closeEditUserModal();
+            }
+        });
+    }
 }
 
 function populateInviterSelect() {
@@ -558,16 +574,17 @@ function renderUsersList() {
         const initials = getInitials(user.name || user.email);
         const isCurrentUser = user.id === getCurrentUserId();
         const hasAvatar = user.photo_url;
+        const isSuspended = user.is_suspended;
 
         return `
-            <div class="user-card" data-user-id="${user.id}">
+            <div class="user-card ${isSuspended ? 'suspended' : ''}" data-user-id="${user.id}">
                 <div class="user-card-info">
                     ${hasAvatar
                         ? `<img class="user-card-avatar-img" src="${user.photo_url}" alt="${user.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
                         : ''}
                     <div class="user-card-avatar ${user.role}" ${hasAvatar ? 'style="display:none;"' : ''}>${initials}</div>
                     <div class="user-card-details">
-                        <span class="user-card-name">${user.name || 'Bez nazwy'}${isCurrentUser ? ' (Ty)' : ''}</span>
+                        <span class="user-card-name">${user.name || 'Bez nazwy'}${isCurrentUser ? ' (Ty)' : ''}${isSuspended ? ' <span class="suspended-badge">Zawieszony</span>' : ''}</span>
                         ${user.position ? `<span class="user-card-position">${user.position}</span>` : ''}
                         <span class="user-card-email">${user.email}</span>
                         ${user.phone ? `<span class="user-card-phone">${user.phone}</span>` : ''}
@@ -579,6 +596,12 @@ function renderUsersList() {
                 </div>
                 <div class="user-card-actions">
                     ${!isCurrentUser ? `
+                        <button type="button" class="btn-user-action edit" onclick="openEditUserModal('${user.id}')" title="Edytuj">
+                            ✏️
+                        </button>
+                        <button type="button" class="btn-user-action ${isSuspended ? 'activate' : 'suspend'}" onclick="toggleUserSuspension('${user.id}')" title="${isSuspended ? 'Aktywuj' : 'Zawieś'}">
+                            ${isSuspended ? '✅' : '⏸️'}
+                        </button>
                         <button type="button" class="btn-user-action delete" onclick="deleteUser('${user.id}')" title="Usuń">
                             🗑️
                         </button>
@@ -745,6 +768,128 @@ async function deleteUser(userId) {
 
 // Globalna funkcja dla onclick
 window.deleteUser = deleteUser;
+
+// ============ EDIT USER ============
+function openEditUserModal(userId) {
+    const user = UsersState.users.find(u => u.id === userId);
+    if (!user) return;
+
+    // Wypełnij formularz danymi użytkownika
+    document.getElementById('editUserId').value = user.id;
+    document.getElementById('editUserName').value = user.name || '';
+    document.getElementById('editUserPosition').value = user.position || '';
+    document.getElementById('editUserEmail').value = user.email || '';
+    document.getElementById('editUserPhone').value = user.phone || '';
+    document.getElementById('editUserRole').value = user.role || 'doradca';
+    document.getElementById('editUserKey').value = user.inviter_key || '';
+    document.getElementById('editUserBio').value = user.bio || '';
+    document.getElementById('editUserPhoto').value = user.photo_url || '';
+
+    // Pokaż modal
+    document.getElementById('editUserModal').classList.add('active');
+}
+
+function closeEditUserModal() {
+    document.getElementById('editUserModal').classList.remove('active');
+    document.getElementById('editUserForm').reset();
+    document.getElementById('editUserError').style.display = 'none';
+}
+
+async function handleEditUser(e) {
+    e.preventDefault();
+
+    const userId = document.getElementById('editUserId').value;
+    const name = document.getElementById('editUserName').value.trim();
+    const position = document.getElementById('editUserPosition').value.trim();
+    const phone = document.getElementById('editUserPhone').value.trim();
+    const role = document.getElementById('editUserRole').value;
+    const inviterKey = document.getElementById('editUserKey').value.trim();
+    const bio = document.getElementById('editUserBio').value.trim();
+    const photoUrl = document.getElementById('editUserPhoto').value.trim();
+
+    const errorDiv = document.getElementById('editUserError');
+    const btnSave = document.getElementById('btnSaveUser');
+
+    if (!name) {
+        errorDiv.textContent = 'Imię i nazwisko jest wymagane';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<span>Zapisywanie...</span>';
+    }
+
+    try {
+        const sb = getSupabase();
+        if (!sb) throw new Error('Supabase not available');
+
+        const { error } = await sb
+            .from('user_profiles')
+            .update({
+                name: name,
+                position: position || null,
+                phone: phone || null,
+                role: role,
+                inviter_key: inviterKey || null,
+                bio: bio || null,
+                photo_url: photoUrl || null
+            })
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast('Dane użytkownika zaktualizowane', 'success');
+        closeEditUserModal();
+        await loadUsers();
+
+    } catch (err) {
+        console.error('Error updating user:', err);
+        errorDiv.textContent = 'Błąd: ' + err.message;
+        errorDiv.style.display = 'block';
+    } finally {
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<span>💾</span> Zapisz zmiany';
+        }
+    }
+}
+
+// ============ SUSPEND USER ============
+async function toggleUserSuspension(userId) {
+    const user = UsersState.users.find(u => u.id === userId);
+    if (!user) return;
+
+    const newStatus = !user.is_suspended;
+    const action = newStatus ? 'zawiesić' : 'aktywować';
+
+    if (!confirm(`Czy na pewno chcesz ${action} tego użytkownika?`)) return;
+
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        const { error } = await sb
+            .from('user_profiles')
+            .update({ is_suspended: newStatus })
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast(newStatus ? 'Użytkownik zawieszony' : 'Użytkownik aktywowany', 'success');
+        await loadUsers();
+
+    } catch (err) {
+        console.error('Error toggling suspension:', err);
+        showToast('Błąd zmiany statusu', 'error');
+    }
+}
+
+// Globalne funkcje dla onclick
+window.openEditUserModal = openEditUserModal;
+window.closeEditUserModal = closeEditUserModal;
+window.toggleUserSuspension = toggleUserSuspension;
 
 // ============ ROLE HELPERS ============
 function isAdmin() {

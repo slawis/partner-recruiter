@@ -557,6 +557,65 @@
                 </form>
             </div>
         </div>
+
+        <!-- Edit User Modal -->
+        <div id="editUserModal" class="modal edit-user-modal">
+            <div class="modal-content edit-user-content">
+                <div class="modal-header">
+                    <h3>✏️ Edytuj użytkownika</h3>
+                    <button type="button" class="btn-close-modal" onclick="closeEditUserModal()">✕</button>
+                </div>
+                <form id="editUserForm" class="inviter-form">
+                    <input type="hidden" id="editUserId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUserName">Imię i nazwisko *</label>
+                            <input type="text" id="editUserName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserPosition">Stanowisko</label>
+                            <input type="text" id="editUserPosition" placeholder="np. Manager">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUserEmail">Email</label>
+                            <input type="email" id="editUserEmail" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserPhone">Telefon</label>
+                            <input type="tel" id="editUserPhone" placeholder="np. 500 000 000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editUserRole">Rola w systemie</label>
+                            <select id="editUserRole">
+                                <option value="doradca">Doradca</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editUserKey">Klucz (do linków)</label>
+                            <input type="text" id="editUserKey" placeholder="np. jan">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUserBio">Krótki opis</label>
+                        <textarea id="editUserBio" rows="2" placeholder="np. 10 lat doświadczenia..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUserPhoto">URL zdjęcia</label>
+                        <input type="url" id="editUserPhoto" placeholder="https://...">
+                    </div>
+                    <div id="editUserError" class="form-error" style="display: none;"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" onclick="closeEditUserModal()">Anuluj</button>
+                        <button type="submit" class="btn-save" id="btnSaveUser"><span>💾</span> Zapisz zmiany</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- ========== TRYB LANDING PAGE (Dla Pośrednika) ========== -->
