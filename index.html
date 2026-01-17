@@ -430,29 +430,44 @@
                             <form id="addUserForm" class="inviter-form">
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="newUserEmail">Email *</label>
-                                        <input type="email" id="newUserEmail" placeholder="np. jan@firma.pl" required>
-                                    </div>
-                                    <div class="form-group">
                                         <label for="newUserName">Imię i nazwisko *</label>
                                         <input type="text" id="newUserName" placeholder="np. Jan Kowalski" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newUserPosition">Stanowisko</label>
+                                        <input type="text" id="newUserPosition" placeholder="np. Manager">
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
-                                        <label for="newUserRole">Rola *</label>
+                                        <label for="newUserEmail">Email (login) *</label>
+                                        <input type="email" id="newUserEmail" placeholder="np. jan@firma.pl" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newUserPhone">Telefon</label>
+                                        <input type="tel" id="newUserPhone" placeholder="np. 500 000 000">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="newUserRole">Rola w systemie *</label>
                                         <select id="newUserRole" required>
                                             <option value="doradca">Doradca</option>
                                             <option value="admin">Administrator</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="newUserInviterKey">Klucz zapraszającego</label>
-                                        <select id="newUserInviterKey">
-                                            <option value="">-- Wybierz (opcjonalne) --</option>
-                                            <!-- Will be populated by JS -->
-                                        </select>
+                                        <label for="newUserKey">Klucz (do linków)</label>
+                                        <input type="text" id="newUserKey" placeholder="np. jan (opcjonalnie)">
                                     </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newUserBio">Krótki opis (opcjonalnie)</label>
+                                    <textarea id="newUserBio" rows="2" placeholder="np. 10 lat doświadczenia w branży finansowej..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newUserPhoto">URL zdjęcia (opcjonalnie)</label>
+                                    <input type="url" id="newUserPhoto" placeholder="https://...">
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">

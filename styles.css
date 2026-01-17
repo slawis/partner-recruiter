@@ -7167,6 +7167,25 @@ a:hover {
     color: var(--text-secondary);
 }
 
+.user-card-avatar-img {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.user-card-position {
+    font-size: 12px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.user-card-phone {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 .user-card-meta {
     display: flex;
     align-items: center;

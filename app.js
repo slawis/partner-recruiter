@@ -557,14 +557,20 @@ function renderUsersList() {
     container.innerHTML = UsersState.users.map(user => {
         const initials = getInitials(user.name || user.email);
         const isCurrentUser = user.id === getCurrentUserId();
+        const hasAvatar = user.photo_url;
 
         return `
             <div class="user-card" data-user-id="${user.id}">
                 <div class="user-card-info">
-                    <div class="user-card-avatar ${user.role}">${initials}</div>
+                    ${hasAvatar
+                        ? `<img class="user-card-avatar-img" src="${user.photo_url}" alt="${user.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                        : ''}
+                    <div class="user-card-avatar ${user.role}" ${hasAvatar ? 'style="display:none;"' : ''}>${initials}</div>
                     <div class="user-card-details">
                         <span class="user-card-name">${user.name || 'Bez nazwy'}${isCurrentUser ? ' (Ty)' : ''}</span>
+                        ${user.position ? `<span class="user-card-position">${user.position}</span>` : ''}
                         <span class="user-card-email">${user.email}</span>
+                        ${user.phone ? `<span class="user-card-phone">${user.phone}</span>` : ''}
                     </div>
                 </div>
                 <div class="user-card-meta">
@@ -596,7 +602,11 @@ async function handleAddUser() {
     const email = document.getElementById('newUserEmail').value.trim();
     const name = document.getElementById('newUserName').value.trim();
     const role = document.getElementById('newUserRole').value;
-    const inviterKey = document.getElementById('newUserInviterKey').value;
+    const position = document.getElementById('newUserPosition')?.value.trim() || '';
+    const phone = document.getElementById('newUserPhone')?.value.trim() || '';
+    const inviterKey = document.getElementById('newUserKey')?.value.trim() || '';
+    const bio = document.getElementById('newUserBio')?.value.trim() || '';
+    const photoUrl = document.getElementById('newUserPhoto')?.value.trim() || '';
     const password = document.getElementById('newUserPassword').value;
     const passwordConfirm = document.getElementById('newUserPasswordConfirm').value;
 
@@ -661,7 +671,11 @@ async function handleAddUser() {
                 email: email,
                 name: name,
                 role: role,
-                inviter_key: inviterKey || null
+                position: position || null,
+                phone: phone || null,
+                inviter_key: inviterKey || null,
+                bio: bio || null,
+                photo_url: photoUrl || null
             });
 
         if (profileError) {
