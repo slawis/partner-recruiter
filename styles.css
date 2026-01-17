@@ -7089,6 +7089,7 @@ a:hover {
 
 /* ==================== STATS DATE FILTER ==================== */
 .stats-filter {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -7147,15 +7148,21 @@ a:hover {
 
 /* Custom date range picker */
 .custom-date-range {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 12px;
+    padding: 10px 14px;
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     animation: slideDown 0.2s ease;
+    z-index: 100;
+    white-space: nowrap;
 }
 
 @keyframes slideDown {
@@ -7228,6 +7235,15 @@ a:hover {
     .generator-header {
         position: relative;
     }
+
+    .custom-date-range {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-top: 8px;
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 600px) {
@@ -7245,13 +7261,17 @@ a:hover {
     }
 
     .custom-date-range {
+        left: 50%;
+        transform: translateX(-50%);
         flex-wrap: wrap;
         justify-content: center;
+        width: calc(100vw - 32px);
+        max-width: 320px;
     }
 
     .custom-date-range input[type="date"] {
         flex: 1;
-        min-width: 120px;
+        min-width: 100px;
     }
 }
 
