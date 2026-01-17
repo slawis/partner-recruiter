@@ -57,6 +57,25 @@
                 <span class="logo-text">Partner Recruiter</span>
             </div>
             <div class="header-actions">
+                <!-- Filtr dat dla statystyk -->
+                <div class="stats-filter">
+                    <div class="filter-pills">
+                        <button type="button" class="filter-pill active" data-filter="all">Wszystko</button>
+                        <button type="button" class="filter-pill" data-filter="today">Dziś</button>
+                        <button type="button" class="filter-pill" data-filter="week">Ten tydzień</button>
+                        <button type="button" class="filter-pill" data-filter="month">Ten miesiąc</button>
+                        <button type="button" class="filter-pill" data-filter="custom">
+                            <span>📅</span>
+                            <span class="custom-range-text">Zakres</span>
+                        </button>
+                    </div>
+                    <div class="custom-date-range" id="customDateRange" style="display: none;">
+                        <input type="date" id="filterDateFrom" title="Od">
+                        <span class="date-separator">–</span>
+                        <input type="date" id="filterDateTo" title="Do">
+                        <button type="button" class="btn-apply-range" id="btnApplyRange">OK</button>
+                    </div>
+                </div>
                 <div class="header-stats">
                     <div class="stat-item">
                         <span class="stat-value" id="statSent">0</span>

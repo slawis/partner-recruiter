@@ -7087,3 +7087,171 @@ a:hover {
     display: none;
 }
 
+/* ==================== STATS DATE FILTER ==================== */
+.stats-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-right: var(--spacing-lg);
+}
+
+.filter-pills {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-body);
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+}
+
+.filter-pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.filter-pill:hover {
+    color: var(--text-primary);
+    background: var(--bg-card);
+}
+
+.filter-pill.active {
+    color: var(--text-white);
+    background: linear-gradient(145deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.filter-pill span {
+    font-size: 12px;
+}
+
+.custom-range-text {
+    display: none;
+}
+
+@media (min-width: 1200px) {
+    .custom-range-text {
+        display: inline;
+    }
+}
+
+/* Custom date range picker */
+.custom-date-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-date-range input[type="date"] {
+    padding: 6px 10px;
+    font-size: 12px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.custom-date-range input[type="date"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+.date-separator {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.btn-apply-range {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-white);
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-apply-range:hover {
+    background: var(--primary-hover);
+}
+
+/* Mobile responsiveness for filter */
+@media (max-width: 1100px) {
+    .stats-filter {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-card);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--border-light);
+        margin-right: 0;
+        z-index: 99;
+    }
+
+    .filter-pills {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .generator-header {
+        position: relative;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-pill {
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+
+    .filter-pill[data-filter="all"],
+    .filter-pill[data-filter="today"],
+    .filter-pill[data-filter="week"],
+    .filter-pill[data-filter="month"] {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .custom-date-range {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .custom-date-range input[type="date"] {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+

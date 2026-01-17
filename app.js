@@ -521,6 +521,9 @@ async function saveInvitationToSupabase(invitation) {
 
 // ============ GENERATOR MODE ============
 async function initGenerator() {
+    // Initialize stats filter
+    initStatsFilter();
+
     // Update stats display
     updateStatsDisplay();
 
@@ -932,14 +935,157 @@ async function deleteMeeting(meetingId) {
     showToast('Spotkanie usunięte', 'success');
 }
 
+// ============ STATS DATE FILTER ============
+let StatsFilter = {
+    type: 'all', // all, today, week, month, custom
+    customFrom: null,
+    customTo: null
+};
+
+function initStatsFilter() {
+    // Załaduj zapisany filtr
+    const savedFilter = localStorage.getItem('statsFilter');
+    if (savedFilter) {
+        try {
+            const parsed = JSON.parse(savedFilter);
+            StatsFilter = { ...StatsFilter, ...parsed };
+        } catch (e) {
+            console.error('Error loading stats filter:', e);
+        }
+    }
+
+    // Ustaw aktywny pill
+    const pills = document.querySelectorAll('.filter-pill');
+    pills.forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.filter === StatsFilter.type);
+
+        pill.addEventListener('click', () => {
+            const filterType = pill.dataset.filter;
+
+            // Toggle custom date range visibility
+            const customRange = document.getElementById('customDateRange');
+            if (filterType === 'custom') {
+                customRange.style.display = customRange.style.display === 'none' ? 'flex' : 'none';
+                if (customRange.style.display === 'flex') {
+                    // Ustaw domyślne daty jeśli brak
+                    const fromInput = document.getElementById('filterDateFrom');
+                    const toInput = document.getElementById('filterDateTo');
+                    if (!fromInput.value) {
+                        const today = new Date();
+                        const monthAgo = new Date(today);
+                        monthAgo.setMonth(monthAgo.getMonth() - 1);
+                        fromInput.value = monthAgo.toISOString().split('T')[0];
+                        toInput.value = today.toISOString().split('T')[0];
+                    }
+                }
+                return;
+            }
+
+            // Ukryj custom range dla innych filtrów
+            if (customRange) customRange.style.display = 'none';
+
+            // Ustaw aktywny pill
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+
+            // Zastosuj filtr
+            StatsFilter.type = filterType;
+            saveStatsFilter();
+            updateStatsDisplay();
+        });
+    });
+
+    // Przycisk "OK" dla custom range
+    const btnApplyRange = document.getElementById('btnApplyRange');
+    if (btnApplyRange) {
+        btnApplyRange.addEventListener('click', () => {
+            const fromInput = document.getElementById('filterDateFrom');
+            const toInput = document.getElementById('filterDateTo');
+
+            StatsFilter.type = 'custom';
+            StatsFilter.customFrom = fromInput.value;
+            StatsFilter.customTo = toInput.value;
+
+            // Ustaw aktywny pill
+            const pills = document.querySelectorAll('.filter-pill');
+            pills.forEach(p => p.classList.toggle('active', p.dataset.filter === 'custom'));
+
+            saveStatsFilter();
+            updateStatsDisplay();
+        });
+    }
+
+    // Jeśli custom był wybrany, pokaż zakres dat
+    if (StatsFilter.type === 'custom') {
+        const customRange = document.getElementById('customDateRange');
+        if (customRange) {
+            customRange.style.display = 'flex';
+            const fromInput = document.getElementById('filterDateFrom');
+            const toInput = document.getElementById('filterDateTo');
+            if (StatsFilter.customFrom) fromInput.value = StatsFilter.customFrom;
+            if (StatsFilter.customTo) toInput.value = StatsFilter.customTo;
+        }
+    }
+}
+
+function saveStatsFilter() {
+    localStorage.setItem('statsFilter', JSON.stringify(StatsFilter));
+}
+
+function getFilteredInvitations() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    return AppState.history.filter(inv => {
+        if (StatsFilter.type === 'all') return true;
+
+        const sentDate = new Date(inv.sentAt);
+        const sentDay = new Date(sentDate.getFullYear(), sentDate.getMonth(), sentDate.getDate());
+
+        switch (StatsFilter.type) {
+            case 'today':
+                return sentDay.getTime() === today.getTime();
+
+            case 'week':
+                const weekAgo = new Date(today);
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                return sentDay >= weekAgo;
+
+            case 'month':
+                const monthAgo = new Date(today);
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                return sentDay >= monthAgo;
+
+            case 'custom':
+                if (!StatsFilter.customFrom || !StatsFilter.customTo) return true;
+                const from = new Date(StatsFilter.customFrom);
+                const to = new Date(StatsFilter.customTo);
+                to.setHours(23, 59, 59, 999); // Include the whole "to" day
+                return sentDate >= from && sentDate <= to;
+
+            default:
+                return true;
+        }
+    });
+}
+
 function updateStatsDisplay() {
     const statSent = document.getElementById('statSent');
     const statOpened = document.getElementById('statOpened');
     const statConverted = document.getElementById('statConverted');
 
-    if (statSent) statSent.textContent = AppState.stats.sent;
-    if (statOpened) statOpened.textContent = AppState.stats.opened;
-    if (statConverted) statConverted.textContent = AppState.stats.converted;
+    // Filtruj zaproszenia według wybranego zakresu dat
+    const filtered = getFilteredInvitations();
+
+    const stats = {
+        sent: filtered.length,
+        opened: filtered.filter(i => i.status === 'opened' || i.status === 'registered').length,
+        converted: filtered.filter(i => i.status === 'registered').length
+    };
+
+    if (statSent) statSent.textContent = stats.sent;
+    if (statOpened) statOpened.textContent = stats.opened;
+    if (statConverted) statConverted.textContent = stats.converted;
 }
 
 function updateEmailPreview() {
