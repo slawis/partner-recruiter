@@ -2800,6 +2800,11 @@ a:hover {
     gap: var(--spacing-lg);
 }
 
+.scheduler-form .btn-schedule {
+    align-self: center;
+    margin-top: var(--spacing-md);
+}
+
 .scheduler-step {
     padding: var(--spacing-md);
     background: var(--bg-body);
