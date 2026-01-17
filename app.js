@@ -409,6 +409,10 @@ async function initCalendar() {
 async function getMeetings() {
     const sb = getSupabase();
 
+    // Zawsze najpierw pobierz z localStorage
+    const saved = localStorage.getItem('scheduledMeetings');
+    const localMeetings = saved ? JSON.parse(saved) : [];
+
     if (sb) {
         try {
             const { data, error } = await sb
@@ -418,13 +422,14 @@ async function getMeetings() {
 
             if (error) throw error;
 
-            if (data) {
+            if (data && data.length > 0) {
                 // Mapuj dane z Supabase na format aplikacji
-                return data.map(m => ({
+                const supabaseMeetings = data.map(m => ({
                     id: m.id,
+                    localId: m.local_id,
                     invitationId: m.invitation_id,
                     inviterKey: m.inviter_key,
-                    inviterName: m.inviter_key, // Do uzupełnienia z inviters
+                    inviterName: m.inviter_key,
                     partnerName: m.partner_name,
                     partnerPhone: m.partner_phone || '',
                     partnerEmail: m.partner_email || '',
@@ -433,15 +438,30 @@ async function getMeetings() {
                     method: m.method,
                     scheduledAt: m.scheduled_at
                 }));
+
+                // Połącz dane z Supabase i localStorage (usuń duplikaty)
+                const allMeetings = [...supabaseMeetings];
+                localMeetings.forEach(local => {
+                    const existsInSupabase = supabaseMeetings.some(s =>
+                        s.localId === local.id ||
+                        (s.partnerName === local.partnerName && s.date === local.date && s.time === local.time)
+                    );
+                    if (!existsInSupabase) {
+                        allMeetings.push(local);
+                    }
+                });
+
+                console.log('Meetings loaded from Supabase:', supabaseMeetings.length, '+ localStorage:', localMeetings.length);
+                return allMeetings;
             }
         } catch (err) {
             console.error('Error loading meetings from Supabase:', err);
         }
     }
 
-    // Fallback: localStorage
-    const saved = localStorage.getItem('scheduledMeetings');
-    return saved ? JSON.parse(saved) : [];
+    // Fallback: tylko localStorage
+    console.log('Meetings loaded from localStorage:', localMeetings.length);
+    return localMeetings;
 }
 
 function getMeetingsSync() {
@@ -460,10 +480,12 @@ async function saveMeetingToSupabase(meeting) {
     if (!sb) return;
 
     try {
-        const { error } = await sb
+        // Nie wysyłamy 'id' - Supabase wygeneruje UUID
+        // Nasz lokalny ID przechowujemy w 'local_id'
+        const { data, error } = await sb
             .from('meetings')
-            .upsert({
-                id: meeting.id,
+            .insert({
+                local_id: meeting.id, // Nasz lokalny ID jako tekst
                 invitation_id: meeting.invitationId || null,
                 inviter_key: meeting.inviterKey || meeting.inviterName || '',
                 partner_name: meeting.partnerName,
@@ -473,10 +495,11 @@ async function saveMeetingToSupabase(meeting) {
                 meeting_time: meeting.time,
                 method: meeting.method,
                 scheduled_at: meeting.scheduledAt || new Date().toISOString()
-            }, { onConflict: 'id' });
+            })
+            .select();
 
         if (error) throw error;
-        console.log('Meeting saved to Supabase:', meeting.id);
+        console.log('Meeting saved to Supabase:', meeting.id, '→', data?.[0]?.id);
     } catch (err) {
         console.error('Error saving meeting to Supabase:', err);
     }
@@ -728,6 +751,29 @@ function handleGenerateInvitation(e) {
         return;
     }
 
+    // Sprawdź czy już istnieje zaproszenie dla tego partnera (ten sam telefon lub email)
+    const existingInvitation = AppState.history.find(inv => {
+        // Sprawdź po telefonie (jeśli podany)
+        if (partnerPhone && inv.partnerPhone === partnerPhone) return true;
+        // Sprawdź po emailu (jeśli podany)
+        if (partnerEmail && inv.partnerEmail === partnerEmail) return true;
+        // Sprawdź po imieniu + nazwisku u tego samego zapraszającego
+        const fullName = partnerLastName ? `${partnerName} ${partnerLastName}` : partnerName;
+        const invFullName = inv.partnerLastName ? `${inv.partnerName} ${inv.partnerLastName}` : inv.partnerName;
+        if (fullName === invFullName && inv.inviterKey === inviterKey) return true;
+        return false;
+    });
+
+    if (existingInvitation) {
+        const confirmDuplicate = confirm(
+            `Zaproszenie dla "${partnerName}" już istnieje (status: ${existingInvitation.status}).\n\n` +
+            `Czy na pewno chcesz utworzyć kolejne zaproszenie?`
+        );
+        if (!confirmDuplicate) {
+            return;
+        }
+    }
+
     // Generate unique ID
     const invitationId = generateId();
 
@@ -826,6 +872,9 @@ function handleGenerateInvitation(e) {
     `;
 
     showToast('Zaproszenie wygenerowane!', 'success');
+
+    // Reset formularza po wygenerowaniu (żeby uniknąć duplikatów)
+    document.getElementById('generatorForm').reset();
 
     // Switch to email tab
     switchPreviewTab('email');
