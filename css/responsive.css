@@ -1,0 +1,342 @@
+/* ==================== PARTNER RECRUITER - RESPONSIVE ==================== */
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .generator-container {
+        grid-template-columns: 1fr;
+    }
+
+    .commission-content {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-content {
+        grid-template-columns: 1fr;
+    }
+
+    .calculator-container {
+        grid-template-columns: 1fr;
+    }
+
+    .projection-breakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .projection-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-bars {
+        gap: 30px;
+    }
+
+    .chart-bar-wrapper {
+        flex: 0 0 90px;
+    }
+
+    .bar-container {
+        width: 60px;
+        height: 160px;
+    }
+}
+
+@media (max-width: 768px) {
+    .generator-header {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        padding: var(--spacing-md);
+    }
+
+    .header-stats {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .generator-main {
+        padding: var(--spacing-md);
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .style-selector {
+        grid-template-columns: 1fr;
+    }
+
+
+    .steps-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .step-connector {
+        transform: rotate(90deg);
+        padding: var(--spacing-md) 0;
+    }
+
+    .hero-title {
+        font-size: 28px;
+    }
+
+    .hero-stats {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .transparency-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Scheduler Responsive */
+    .scheduler-container {
+        padding: var(--spacing-md);
+    }
+
+    .contact-method-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .time-slots {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .contact-fields .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* Projection Chart Responsive */
+    .projection-options {
+        flex-direction: column;
+    }
+
+    .projection-chart {
+        padding-left: var(--spacing-md);
+        min-height: 300px;
+    }
+
+    .chart-y-axis {
+        display: none;
+    }
+
+    .chart-bars {
+        gap: 20px;
+        height: 220px;
+    }
+
+    .chart-bar-wrapper {
+        flex: 1;
+        min-width: 80px;
+    }
+
+    .bar-container {
+        width: 50px;
+        height: 140px;
+    }
+
+    .bar-amount {
+        font-size: 14px;
+    }
+
+    .bar-growth {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .summary-stat {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .summary-value {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .preview-tabs {
+        flex-wrap: wrap;
+    }
+
+    .history-table th:nth-child(4),
+    .history-table td:nth-child(4),
+    .history-table th:nth-child(3),
+    .history-table td:nth-child(3) {
+        display: none;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        text-align: center;
+    }
+}
+
+/* ===== RESPONSIVE LAYOUT SWITCHING ===== */
+
+/* Default: Desktop layout visible, will be hidden on mobile */
+.desktop-layout {
+    display: block;
+}
+
+/* Default: Mobile app elements visible */
+.landing-mode > .app-header {
+    display: flex;
+}
+.landing-mode > .app-content,
+.landing-mode > .app-bottom-bar {
+    display: block;
+}
+
+/* Mobile: Hide desktop layout, show mobile app */
+@media (max-width: 768px) {
+    .desktop-layout {
+        display: none !important;
+    }
+
+    .landing-mode > .app-header {
+        display: flex !important;
+    }
+    .landing-mode > .app-content,
+    .landing-mode > .app-bottom-bar {
+        display: block !important;
+    }
+}
+
+/* Desktop: Hide mobile app, show desktop layout */
+@media (min-width: 769px) {
+    /* Hide mobile app elements (but NOT modals - they're controlled by JS) */
+    .landing-mode > .app-header,
+    .landing-mode > .app-content,
+    .landing-mode > .app-bottom-bar,
+    .landing-mode > .bottom-sheet-overlay,
+    .landing-mode > .bottom-sheet {
+        display: none !important;
+    }
+
+    /* Show desktop layout */
+    .desktop-layout {
+        display: block !important;
+    }
+}
+
+/* ==================== SMALL MOBILE FIXES (< 400px) ==================== */
+@media (max-width: 400px) {
+    /* Tier buttons - smaller padding on tiny screens */
+    .tier-selector {
+        gap: 4px;
+    }
+
+    .tier-btn {
+        padding: 8px 2px;
+        border-radius: 8px;
+    }
+
+    .tier-btn-percent {
+        font-size: 12px;
+    }
+
+    .tier-btn-name {
+        font-size: 8px;
+    }
+
+    /* Invitation stats - smaller text */
+    .inv-stat-value {
+        font-size: 13px;
+    }
+
+    .inv-stat-label {
+        font-size: 8px;
+    }
+
+    /* App header - smaller */
+    .app-name {
+        font-size: 14px;
+    }
+
+    .app-tagline {
+        font-size: 9px;
+    }
+
+    /* Bottom bar - tighter */
+    .bottom-bar-content {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .bbi-title {
+        font-size: 12px;
+    }
+
+    .bbi-subtitle {
+        font-size: 11px;
+    }
+
+    .bottom-bar-cta {
+        padding: 10px 16px;
+    }
+
+    /* Card headers */
+    .app-card h2 {
+        font-size: 18px;
+    }
+
+    /* Trust grid - single column on tiny screens */
+    .trust-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Service items - tighter */
+    .siv2-commission {
+        min-width: 70px;
+    }
+
+    .siv2-amount {
+        font-size: 11px;
+    }
+
+    /* Calculator results */
+    .calc-results-v2 {
+        gap: 8px;
+    }
+
+    .cri-value {
+        font-size: 16px;
+    }
+
+    /* How steps */
+    .how-step-time {
+        font-size: 11px;
+        min-width: 45px;
+    }
+}
+
+/* ==================== GENERAL MOBILE IMPROVEMENTS ==================== */
+@media (max-width: 768px) {
+    /* Better touch targets */
+    .tier-btn,
+    .time-slot,
+    .date-item {
+        min-height: 44px;
+    }
+
+    /* Prevent horizontal scroll */
+    .app-content {
+        overflow-x: hidden;
+    }
+
+    /* Smoother scrolling */
+    .app-content,
+    .bottom-sheet-content {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Fix for iOS safe areas */
+    .app-bottom-bar {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+}

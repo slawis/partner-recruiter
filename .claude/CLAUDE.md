@@ -8,11 +8,60 @@ Narzędzie do rekrutacji partnerów B2B dla serwisu oddłużeniowego. Składa si
 ## Struktura plików
 ```
 partner-recruiter/
-├── index.html    # Główny plik HTML (Generator + Landing)
-├── styles.css    # Style CSS - jasny motyw SaaS
-├── app.js        # Logika JavaScript
+├── index.html           # Główny plik HTML (Generator + Landing)
+│
+├── css/                 # Style CSS - modularny
+│   ├── base.css         # Zmienne CSS, reset, scrollbar
+│   ├── generator.css    # Style panelu generatora
+│   ├── landing.css      # Style landing page + mobile app
+│   ├── scheduler.css    # Scheduler, modals, toast
+│   ├── auth.css         # Login, settings, user management
+│   └── responsive.css   # Media queries, layout switching
+│
+├── js/                  # Logika JavaScript - modularny
+│   ├── config.js        # CONFIG, stałe, Supabase credentials
+│   ├── utils.js         # Helpers: showToast, formatCurrency, DOM utils
+│   ├── state.js         # AppState, detectMode(), loadState/saveState
+│   ├── supabase.js      # Operacje bazodanowe (invitations, meetings)
+│   ├── auth.js          # AuthState, login/logout, password reset
+│   ├── users.js         # UsersState, zarządzanie użytkownikami (admin)
+│   ├── generator.js     # Generator mode: historia, kalendarz, preview
+│   ├── calculator.js    # Kalkulator prowizji, projekcje
+│   ├── scheduler.js     # Scheduler spotkań (mobile + desktop)
+│   ├── landing.js       # Landing page, personalizacja
+│   ├── inviters.js      # InvitersState, zarządzanie zapraszającymi
+│   └── main.js          # Entry point, inicjalizacja
+│
+├── styles.css           # [LEGACY] Oryginalne style (backup)
+├── app.js               # [LEGACY] Oryginalny kod (backup)
+│
 └── .claude/
-    └── CLAUDE.md # Ten plik
+    └── CLAUDE.md        # Ten plik
+```
+
+## Kolejność ładowania skryptów
+```html
+<!-- CSS -->
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/generator.css">
+<link rel="stylesheet" href="css/landing.css">
+<link rel="stylesheet" href="css/scheduler.css">
+<link rel="stylesheet" href="css/auth.css">
+<link rel="stylesheet" href="css/responsive.css">
+
+<!-- JS (kolejność ważna!) -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/state.js"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/users.js"></script>
+<script src="js/generator.js"></script>
+<script src="js/calculator.js"></script>
+<script src="js/scheduler.js"></script>
+<script src="js/landing.js"></script>
+<script src="js/inviters.js"></script>
+<script src="js/main.js"></script>
 ```
 
 ## Generator Mode - Dashboard
@@ -53,7 +102,7 @@ partner-recruiter/
 
 ### Konfiguracja
 - **URL:** `https://rgcvncpmcmqskrybobbd.supabase.co`
-- **Anon Key:** w pliku `app.js`
+- **Anon Key:** w pliku `js/config.js`
 
 ### Tabele
 | Tabela | Opis |
@@ -110,29 +159,65 @@ Wszystkie funkcje mają fallback do localStorage - jeśli Supabase niedostępne,
 }
 ```
 
-## Kluczowe funkcje JavaScript
+## Kluczowe funkcje JavaScript (wg modułów)
 
-### Generator
-- `initGenerator()` - inicjalizacja panelu generatora
-- `initDashboardTabs()` - przełączanie zakładek
-- `initCalendar()` - kalendarz spotkań
-- `renderMeetings()` - renderowanie listy spotkań
-- `cleanupDuplicateMeetings()` - usuwanie duplikatów
-- `initSettings()` - panel ustawień zapraszających
+### config.js
+- `CONFIG` - obiekt konfiguracji (baseUrl, inviters, emailStyles)
+- `SUPABASE_URL`, `SUPABASE_ANON_KEY` - dane dostępowe
 
-### Landing
-- `initLanding()` - inicjalizacja landing page
-- `initMobileApp()` - inicjalizacja wersji mobilnej
-- `initDesktopApp()` - inicjalizacja wersji desktop
-- `getExistingMeetingForInvitation()` - szukanie istniejącego spotkania
-- `updateMeetingConfirmedUI()` - aktualizacja UI po umówieniu
-- `handleMobileScheduleSubmit()` - zapis spotkania (mobile)
-- `handleDesktopScheduleSubmit()` - zapis spotkania (desktop)
-
-### Inne
-- `generateLink()` - generowanie linku zaproszeniowego
-- `personalizeContent()` - personalizacja treści na landing
+### utils.js
 - `showToast()` - powiadomienia toast
+- `formatCurrency()` / `formatCurrencyShort()` - formatowanie walut
+- `setTextContent()`, `setupContactLink()`, `toggleDetailRow()` - DOM helpers
+
+### state.js
+- `AppState` - globalny stan aplikacji
+- `detectMode()` - wykrywanie trybu (generator/landing)
+- `loadState()` / `saveState()` - persystencja stanu
+
+### auth.js
+- `AuthState` - stan autentykacji
+- `initAuth()` - sprawdzenie sesji
+- `handleLogin()` / `handleLogout()` - logowanie/wylogowanie
+- `initPasswordReset()` - reset hasła
+
+### users.js (admin)
+- `UsersState` - stan zarządzania użytkownikami
+- `loadUsers()` / `renderUsersList()` - lista użytkowników
+- `handleAddUser()` / `handleEditUser()` / `deleteUser()` - CRUD
+
+### generator.js
+- `initGenerator()` - inicjalizacja panelu
+- `initDashboardTabs()` - przełączanie zakładek
+- `initCalendar()` / `renderMeetings()` - kalendarz spotkań
+- `generateLink()` - generowanie linku zaproszeniowego
+- `renderHistory()` - historia zaproszeń
+
+### scheduler.js
+- `initMeetingScheduler()` - inicjalizacja schedulera
+- `initBottomSheet()` - mobile bottom sheet
+- `handleMobileScheduleSubmit()` / `handleDesktopScheduleSubmit()` - zapis
+- `getExistingMeetingForInvitation()` - szukanie istniejącego spotkania
+
+### landing.js
+- `initLanding()` - inicjalizacja landing page
+- `personalizeContent()` - personalizacja treści
+- `populatePartnerBusinessCard()` - karta partnera
+
+### calculator.js
+- `initCalculator()` - kalkulator prowizji
+- `updateProjectionChart()` - wykres projekcji
+- `initMobileCalculator()` / `initDesktopCalculator()` - wersje
+
+### inviters.js
+- `InvitersState` - stan zapraszających
+- `loadInviters()` / `saveInviters()` - persystencja
+- `handleAddInviter()` / `handleEditInviter()` / `deleteInviter()` - CRUD
+- `renderInvitersList()` / `updateInviterSelect()` - UI
+
+### main.js
+- Entry point - inicjalizacja aplikacji na DOMContentLoaded
+- `initGeneratorWithSettings()` - pełna inicjalizacja generatora
 
 ## Style CSS - Klasy
 
