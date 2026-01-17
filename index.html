@@ -21,8 +21,36 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- ========== EKRAN LOGOWANIA ========== -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <span class="login-logo">⚡</span>
+                <h1>Partner Recruiter</h1>
+                <p>Zaloguj się do panelu</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="twoj@email.pl" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Hasło</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
+                </div>
+                <div id="loginError" class="login-error" style="display: none;"></div>
+                <button type="submit" class="btn-login" id="btnLogin">
+                    <span>Zaloguj się</span>
+                </button>
+            </form>
+            <div class="login-footer">
+                <p>posrednik.app © 2026</p>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== TRYB GENERATOR (Panel Managera) ========== -->
-    <div id="generatorMode" class="generator-mode">
+    <div id="generatorMode" class="generator-mode" style="display: none;">
         <header class="generator-header">
             <div class="logo">
                 <span class="logo-icon">⚡</span>
@@ -47,6 +75,15 @@
                     <span class="settings-icon">⚙️</span>
                     <span>Ustawienia</span>
                 </button>
+                <div class="user-menu">
+                    <span class="user-info" id="userInfo">
+                        <span class="user-role" id="userRole">Admin</span>
+                        <span class="user-name" id="userName">-</span>
+                    </span>
+                    <button type="button" class="btn-logout" id="btnLogout" title="Wyloguj">
+                        🚪
+                    </button>
+                </div>
             </div>
         </header>
 

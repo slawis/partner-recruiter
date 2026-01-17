@@ -88,6 +88,220 @@ function getSupabase() {
     return supabaseClient;
 }
 
+// ============ AUTH STATE ============
+let AuthState = {
+    user: null,
+    profile: null,
+    isAuthenticated: false
+};
+
+// ============ AUTH FUNCTIONS ============
+async function initAuth() {
+    const sb = getSupabase();
+    if (!sb) {
+        console.warn('Supabase not available for auth');
+        return false;
+    }
+
+    // Sprawdź istniejącą sesję
+    const { data: { session }, error } = await sb.auth.getSession();
+
+    if (error) {
+        console.error('Error getting session:', error);
+        return false;
+    }
+
+    if (session) {
+        AuthState.user = session.user;
+        AuthState.isAuthenticated = true;
+
+        // Pobierz profil użytkownika
+        await loadUserProfile(session.user.id);
+        return true;
+    }
+
+    return false;
+}
+
+async function loadUserProfile(userId) {
+    const sb = getSupabase();
+    if (!sb) return null;
+
+    const { data, error } = await sb
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+    if (error) {
+        console.error('Error loading user profile:', error);
+        return null;
+    }
+
+    AuthState.profile = data;
+    console.log('User profile loaded:', data);
+    return data;
+}
+
+async function handleLogin(email, password) {
+    const sb = getSupabase();
+    if (!sb) {
+        throw new Error('Supabase not available');
+    }
+
+    const { data, error } = await sb.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+
+    if (error) {
+        throw error;
+    }
+
+    AuthState.user = data.user;
+    AuthState.isAuthenticated = true;
+
+    // Pobierz profil
+    await loadUserProfile(data.user.id);
+
+    return data;
+}
+
+async function handleLogout() {
+    const sb = getSupabase();
+    if (!sb) return;
+
+    const { error } = await sb.auth.signOut();
+
+    if (error) {
+        console.error('Error signing out:', error);
+    }
+
+    AuthState.user = null;
+    AuthState.profile = null;
+    AuthState.isAuthenticated = false;
+
+    // Pokaż ekran logowania
+    showLoginScreen();
+}
+
+function showLoginScreen() {
+    const loginScreen = document.getElementById('loginScreen');
+    const generatorMode = document.getElementById('generatorMode');
+    const userMenu = document.querySelector('.user-menu');
+
+    if (loginScreen) loginScreen.classList.remove('hidden');
+    if (generatorMode) generatorMode.style.display = 'none';
+    if (userMenu) userMenu.classList.add('hidden');
+}
+
+function hideLoginScreen() {
+    const loginScreen = document.getElementById('loginScreen');
+    const generatorMode = document.getElementById('generatorMode');
+    const userMenu = document.querySelector('.user-menu');
+
+    if (loginScreen) loginScreen.classList.add('hidden');
+    if (generatorMode) generatorMode.style.display = 'block';
+    if (userMenu) userMenu.classList.remove('hidden');
+
+    // Aktualizuj info o użytkowniku w UI
+    updateUserUI();
+}
+
+function updateUserUI() {
+    const userRole = document.getElementById('userRole');
+    const userName = document.getElementById('userName');
+
+    if (AuthState.profile) {
+        if (userRole) {
+            userRole.textContent = AuthState.profile.role === 'admin' ? 'Admin' : 'Doradca';
+            userRole.className = 'user-role ' + AuthState.profile.role;
+        }
+        if (userName) {
+            userName.textContent = AuthState.profile.name || AuthState.user?.email || '-';
+        }
+    }
+}
+
+function initLoginForm() {
+    const loginForm = document.getElementById('loginForm');
+    const btnLogout = document.getElementById('btnLogout');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginError = document.getElementById('loginError');
+            const btnLogin = document.getElementById('btnLogin');
+
+            // Reset error
+            if (loginError) loginError.style.display = 'none';
+
+            // Loading state
+            if (btnLogin) {
+                btnLogin.disabled = true;
+                btnLogin.innerHTML = '<span>Logowanie...</span>';
+            }
+
+            try {
+                await handleLogin(email, password);
+                hideLoginScreen();
+                await initGenerator();
+            } catch (error) {
+                console.error('Login error:', error);
+                if (loginError) {
+                    loginError.textContent = error.message === 'Invalid login credentials'
+                        ? 'Nieprawidłowy email lub hasło'
+                        : 'Błąd logowania: ' + error.message;
+                    loginError.style.display = 'block';
+                }
+            } finally {
+                if (btnLogin) {
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = '<span>Zaloguj się</span>';
+                }
+            }
+        });
+    }
+
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            await handleLogout();
+        });
+    }
+}
+
+// ============ ROLE HELPERS ============
+function isAdmin() {
+    return AuthState.profile?.role === 'admin';
+}
+
+function isDoradca() {
+    return AuthState.profile?.role === 'doradca';
+}
+
+function getCurrentUserId() {
+    return AuthState.user?.id || null;
+}
+
+function getCurrentUserInviterKey() {
+    return AuthState.profile?.inviter_key || null;
+}
+
+// Sprawdza czy użytkownik może widzieć dane (admin widzi wszystko, doradca tylko swoje)
+function canViewData(userId, inviterKey) {
+    if (isAdmin()) return true;
+    if (isDoradca()) {
+        // Doradca widzi tylko swoje dane
+        const currentUserId = getCurrentUserId();
+        const currentInviterKey = getCurrentUserInviterKey();
+        return userId === currentUserId || inviterKey === currentInviterKey;
+    }
+    return false;
+}
+
 // ============ STATE ============
 let AppState = {
     mode: 'generator', // 'generator' or 'landing'
@@ -117,8 +331,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadState();
 
     if (AppState.mode === 'generator') {
-        await initGenerator();
+        // Inicjalizuj formularz logowania
+        initLoginForm();
+
+        // Sprawdź autentykację
+        const isAuthenticated = await initAuth();
+
+        if (isAuthenticated) {
+            // Użytkownik zalogowany - pokaż generator
+            hideLoginScreen();
+            await initGenerator();
+        } else {
+            // Brak sesji - pokaż ekran logowania
+            showLoginScreen();
+        }
     } else {
+        // Landing mode - bez logowania
+        document.getElementById('loginScreen')?.classList.add('hidden');
         initLanding();
     }
 });
@@ -190,10 +419,20 @@ async function loadState() {
     if (sb) {
         try {
             // Załaduj invitations z Supabase
-            const { data: invitations, error: invError } = await sb
+            let query = sb
                 .from('invitations')
                 .select('*')
                 .order('sent_at', { ascending: false });
+
+            // Filtruj po inviter_key dla doradców
+            if (isDoradca()) {
+                const myInviterKey = getCurrentUserInviterKey();
+                if (myInviterKey) {
+                    query = query.eq('inviter_key', myInviterKey);
+                }
+            }
+
+            const { data: invitations, error: invError } = await query;
 
             if (invError) throw invError;
 
@@ -231,9 +470,16 @@ async function loadState() {
     const savedStats = localStorage.getItem('recruiter_stats');
 
     if (savedHistory) {
-        AppState.history = JSON.parse(savedHistory);
+        let history = JSON.parse(savedHistory);
+        // Filtruj localStorage jeśli doradca
+        if (isDoradca()) {
+            const myInviterKey = getCurrentUserInviterKey();
+            history = history.filter(h => h.inviterKey === myInviterKey);
+        }
+        AppState.history = history;
     }
-    if (savedStats) {
+    if (savedStats && isAdmin()) {
+        // Tylko admin widzi globalne statystyki
         AppState.stats = JSON.parse(savedStats);
     }
 }
@@ -414,14 +660,30 @@ async function getMeetings() {
 
     // Zawsze najpierw pobierz z localStorage
     const saved = localStorage.getItem('scheduledMeetings');
-    const localMeetings = saved ? JSON.parse(saved) : [];
+    let localMeetings = saved ? JSON.parse(saved) : [];
+
+    // Filtruj localStorage jeśli doradca
+    if (isDoradca()) {
+        const myInviterKey = getCurrentUserInviterKey();
+        localMeetings = localMeetings.filter(m => m.inviterKey === myInviterKey);
+    }
 
     if (sb) {
         try {
-            const { data, error } = await sb
+            let query = sb
                 .from('meetings')
                 .select('*')
                 .order('meeting_date', { ascending: true });
+
+            // Filtruj po inviter_key dla doradców
+            if (isDoradca()) {
+                const myInviterKey = getCurrentUserInviterKey();
+                if (myInviterKey) {
+                    query = query.eq('inviter_key', myInviterKey);
+                }
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
 
@@ -2511,12 +2773,26 @@ function generateLinkWithInviterDetails(partnerData, inviterKey, invitationId) {
 // Override generateLink
 generateLink = generateLinkWithInviterDetails;
 
-// Update initGenerator to include settings init
+// Update initGenerator to include settings init and role-based UI
 const originalInitGenerator = initGenerator;
 initGenerator = async function() {
     await originalInitGenerator();
     await initSettings();
+    applyRoleBasedUI();
 };
+
+// Aplikuj zmiany UI na podstawie roli użytkownika
+function applyRoleBasedUI() {
+    const btnSettings = document.getElementById('btnSettings');
+
+    if (isDoradca()) {
+        // Doradca nie widzi ustawień (zarządzanie doradcami)
+        if (btnSettings) btnSettings.style.display = 'none';
+    } else if (isAdmin()) {
+        // Admin widzi wszystko
+        if (btnSettings) btnSettings.style.display = '';
+    }
+}
 
 // Personalizacja jest teraz obsługiwana centralnie przez personalizeContent()
 
