@@ -6579,6 +6579,123 @@ a:hover {
     }
 }
 
+/* ==================== SMALL MOBILE FIXES (< 400px) ==================== */
+@media (max-width: 400px) {
+    /* Tier buttons - smaller padding on tiny screens */
+    .tier-selector {
+        gap: 4px;
+    }
+
+    .tier-btn {
+        padding: 8px 2px;
+        border-radius: 8px;
+    }
+
+    .tier-btn-percent {
+        font-size: 12px;
+    }
+
+    .tier-btn-name {
+        font-size: 8px;
+    }
+
+    /* Invitation stats - smaller text */
+    .inv-stat-value {
+        font-size: 13px;
+    }
+
+    .inv-stat-label {
+        font-size: 8px;
+    }
+
+    /* App header - smaller */
+    .app-name {
+        font-size: 14px;
+    }
+
+    .app-tagline {
+        font-size: 9px;
+    }
+
+    /* Bottom bar - tighter */
+    .bottom-bar-content {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .bbi-title {
+        font-size: 12px;
+    }
+
+    .bbi-subtitle {
+        font-size: 11px;
+    }
+
+    .bottom-bar-cta {
+        padding: 10px 16px;
+    }
+
+    /* Card headers */
+    .app-card h2 {
+        font-size: 18px;
+    }
+
+    /* Trust grid - single column on tiny screens */
+    .trust-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Service items - tighter */
+    .siv2-commission {
+        min-width: 70px;
+    }
+
+    .siv2-amount {
+        font-size: 11px;
+    }
+
+    /* Calculator results */
+    .calc-results-v2 {
+        gap: 8px;
+    }
+
+    .cri-value {
+        font-size: 16px;
+    }
+
+    /* How steps */
+    .how-step-time {
+        font-size: 11px;
+        min-width: 45px;
+    }
+}
+
+/* ==================== GENERAL MOBILE IMPROVEMENTS ==================== */
+@media (max-width: 768px) {
+    /* Better touch targets */
+    .tier-btn,
+    .time-slot,
+    .date-item {
+        min-height: 44px;
+    }
+
+    /* Prevent horizontal scroll */
+    .app-content {
+        overflow-x: hidden;
+    }
+
+    /* Smoother scrolling */
+    .app-content,
+    .bottom-sheet-content {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Fix for iOS safe areas */
+    .app-bottom-bar {
+        padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+}
+
 /* ==================== PHOTO PICKER STYLES ==================== */
 
 .photo-picker-group {
