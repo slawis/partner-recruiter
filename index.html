@@ -470,6 +470,70 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- User Management Section (Admin only) -->
+                    <div class="settings-section" id="userManagementSection">
+                        <div class="settings-section-header">
+                            <h3>🔐 Zarządzanie użytkownikami</h3>
+                            <p>Dodawaj i zarządzaj kontami administratorów i doradców</p>
+                        </div>
+
+                        <!-- Add New User Form -->
+                        <div class="inviter-form-card">
+                            <h4>Dodaj nowego użytkownika</h4>
+                            <form id="addUserForm" class="inviter-form">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="newUserEmail">Email *</label>
+                                        <input type="email" id="newUserEmail" placeholder="np. jan@firma.pl" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newUserName">Imię i nazwisko *</label>
+                                        <input type="text" id="newUserName" placeholder="np. Jan Kowalski" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="newUserRole">Rola *</label>
+                                        <select id="newUserRole" required>
+                                            <option value="doradca">Doradca</option>
+                                            <option value="admin">Administrator</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newUserInviterKey">Klucz zapraszającego</label>
+                                        <select id="newUserInviterKey">
+                                            <option value="">-- Wybierz (opcjonalne) --</option>
+                                            <!-- Will be populated by JS -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="newUserPassword">Hasło *</label>
+                                        <input type="password" id="newUserPassword" placeholder="Min. 6 znaków" minlength="6" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newUserPasswordConfirm">Potwierdź hasło *</label>
+                                        <input type="password" id="newUserPasswordConfirm" placeholder="Powtórz hasło" minlength="6" required>
+                                    </div>
+                                </div>
+                                <div id="addUserError" class="form-error" style="display: none;"></div>
+                                <div id="addUserSuccess" class="form-success" style="display: none;"></div>
+                                <button type="submit" class="btn-add-inviter" id="btnAddUser">
+                                    <span>➕</span> Dodaj użytkownika
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Users List -->
+                        <div class="inviters-list-section">
+                            <h4>Lista użytkowników</h4>
+                            <div class="users-list" id="usersList">
+                                <!-- Users will be rendered here by JS -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

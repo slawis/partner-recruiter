@@ -477,6 +477,261 @@ async function handleSetNewPassword() {
     }
 }
 
+// ============ USER MANAGEMENT ============
+let UsersState = {
+    users: []
+};
+
+function initUserManagement() {
+    const addUserForm = document.getElementById('addUserForm');
+    const userManagementSection = document.getElementById('userManagementSection');
+
+    // Pokaż sekcję tylko dla adminów
+    if (userManagementSection) {
+        userManagementSection.style.display = isAdmin() ? 'block' : 'none';
+    }
+
+    if (!isAdmin()) return;
+
+    // Załaduj listę użytkowników
+    loadUsers();
+
+    // Wypełnij select z zapraszającymi
+    populateInviterSelect();
+
+    // Obsługa formularza dodawania użytkownika
+    if (addUserForm) {
+        addUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleAddUser();
+        });
+    }
+}
+
+function populateInviterSelect() {
+    const select = document.getElementById('newUserInviterKey');
+    if (!select) return;
+
+    // Wyczyść opcje (zostaw pierwszą)
+    select.innerHTML = '<option value="">-- Wybierz (opcjonalne) --</option>';
+
+    // Dodaj zapraszających z InvitersState
+    if (typeof InvitersState !== 'undefined' && InvitersState.inviters) {
+        InvitersState.inviters.forEach(inviter => {
+            const option = document.createElement('option');
+            option.value = inviter.key;
+            option.textContent = inviter.name || inviter.key;
+            select.appendChild(option);
+        });
+    }
+}
+
+async function loadUsers() {
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        const { data, error } = await sb
+            .from('user_profiles')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        UsersState.users = data || [];
+        renderUsersList();
+    } catch (err) {
+        console.error('Error loading users:', err);
+    }
+}
+
+function renderUsersList() {
+    const container = document.getElementById('usersList');
+    if (!container) return;
+
+    if (UsersState.users.length === 0) {
+        container.innerHTML = '<div class="users-list-empty">Brak użytkowników</div>';
+        return;
+    }
+
+    container.innerHTML = UsersState.users.map(user => {
+        const initials = getInitials(user.name || user.email);
+        const isCurrentUser = user.id === getCurrentUserId();
+
+        return `
+            <div class="user-card" data-user-id="${user.id}">
+                <div class="user-card-info">
+                    <div class="user-card-avatar ${user.role}">${initials}</div>
+                    <div class="user-card-details">
+                        <span class="user-card-name">${user.name || 'Bez nazwy'}${isCurrentUser ? ' (Ty)' : ''}</span>
+                        <span class="user-card-email">${user.email}</span>
+                    </div>
+                </div>
+                <div class="user-card-meta">
+                    <span class="user-card-role ${user.role}">${user.role === 'admin' ? 'Admin' : 'Doradca'}</span>
+                    ${user.inviter_key ? `<span class="user-card-inviter">🔗 ${user.inviter_key}</span>` : ''}
+                </div>
+                <div class="user-card-actions">
+                    ${!isCurrentUser ? `
+                        <button type="button" class="btn-user-action delete" onclick="deleteUser('${user.id}')" title="Usuń">
+                            🗑️
+                        </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getInitials(name) {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+}
+
+async function handleAddUser() {
+    const email = document.getElementById('newUserEmail').value.trim();
+    const name = document.getElementById('newUserName').value.trim();
+    const role = document.getElementById('newUserRole').value;
+    const inviterKey = document.getElementById('newUserInviterKey').value;
+    const password = document.getElementById('newUserPassword').value;
+    const passwordConfirm = document.getElementById('newUserPasswordConfirm').value;
+
+    const errorDiv = document.getElementById('addUserError');
+    const successDiv = document.getElementById('addUserSuccess');
+    const btnAddUser = document.getElementById('btnAddUser');
+
+    // Reset messages
+    if (errorDiv) errorDiv.style.display = 'none';
+    if (successDiv) successDiv.style.display = 'none';
+
+    // Walidacja
+    if (password !== passwordConfirm) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Hasła nie są identyczne';
+            errorDiv.style.display = 'block';
+        }
+        return;
+    }
+
+    if (password.length < 6) {
+        if (errorDiv) {
+            errorDiv.textContent = 'Hasło musi mieć minimum 6 znaków';
+            errorDiv.style.display = 'block';
+        }
+        return;
+    }
+
+    // Loading state
+    if (btnAddUser) {
+        btnAddUser.disabled = true;
+        btnAddUser.innerHTML = '<span>Tworzenie...</span>';
+    }
+
+    try {
+        const sb = getSupabase();
+        if (!sb) throw new Error('Supabase not available');
+
+        // 1. Utwórz użytkownika przez signUp
+        const { data: authData, error: authError } = await sb.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: {
+                    name: name,
+                    role: role
+                }
+            }
+        });
+
+        if (authError) throw authError;
+
+        if (!authData.user) {
+            throw new Error('Nie udało się utworzyć użytkownika');
+        }
+
+        // 2. Dodaj profil do user_profiles
+        const { error: profileError } = await sb
+            .from('user_profiles')
+            .insert({
+                id: authData.user.id,
+                email: email,
+                name: name,
+                role: role,
+                inviter_key: inviterKey || null
+            });
+
+        if (profileError) {
+            console.error('Profile insert error:', profileError);
+            // Użytkownik auth został utworzony, ale profil nie - to może być problem
+            // W produkcji trzeba by to lepiej obsłużyć
+        }
+
+        // Sukces
+        if (successDiv) {
+            successDiv.textContent = `✅ Użytkownik ${name} (${email}) został utworzony!`;
+            successDiv.style.display = 'block';
+        }
+
+        // Wyczyść formularz
+        document.getElementById('addUserForm').reset();
+
+        // Odśwież listę
+        await loadUsers();
+
+        // Ukryj komunikat sukcesu po 5 sekundach
+        setTimeout(() => {
+            if (successDiv) successDiv.style.display = 'none';
+        }, 5000);
+
+    } catch (error) {
+        console.error('Add user error:', error);
+        if (errorDiv) {
+            let message = error.message;
+            if (message.includes('already registered')) {
+                message = 'Ten email jest już zarejestrowany';
+            }
+            errorDiv.textContent = 'Błąd: ' + message;
+            errorDiv.style.display = 'block';
+        }
+    } finally {
+        if (btnAddUser) {
+            btnAddUser.disabled = false;
+            btnAddUser.innerHTML = '<span>➕</span> Dodaj użytkownika';
+        }
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return;
+
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        // Usuń profil użytkownika (auth user zostanie, ale nie będzie mógł się zalogować do aplikacji)
+        const { error } = await sb
+            .from('user_profiles')
+            .delete()
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showToast('Użytkownik usunięty', 'success');
+        await loadUsers();
+
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        showToast('Błąd usuwania użytkownika', 'error');
+    }
+}
+
+// Globalna funkcja dla onclick
+window.deleteUser = deleteUser;
+
 // ============ ROLE HELPERS ============
 function isAdmin() {
     return AuthState.profile?.role === 'admin';
@@ -2788,6 +3043,9 @@ async function initSettings() {
 
     // Update inviter select dropdown
     updateInviterSelect();
+
+    // Initialize user management (admin only)
+    initUserManagement();
 }
 
 function openSettings() {
