@@ -1001,6 +1001,9 @@ function initStatsFilter() {
         btnApplyRange.addEventListener('click', () => {
             const fromInput = document.getElementById('filterDateFrom');
             const toInput = document.getElementById('filterDateTo');
+            const customRange = document.getElementById('customDateRange');
+
+            console.log('Applying custom range:', fromInput.value, '-', toInput.value);
 
             StatsFilter.type = 'custom';
             StatsFilter.customFrom = fromInput.value;
@@ -1010,8 +1013,13 @@ function initStatsFilter() {
             const pills = document.querySelectorAll('.filter-pill');
             pills.forEach(p => p.classList.toggle('active', p.dataset.filter === 'custom'));
 
+            // Zamknij date picker
+            if (customRange) customRange.style.display = 'none';
+
             saveStatsFilter();
             updateStatsDisplay();
+
+            console.log('Filter applied, filtered count:', getFilteredInvitations().length);
         });
     }
 
@@ -1039,7 +1047,12 @@ function getFilteredInvitations() {
     return AppState.history.filter(inv => {
         if (StatsFilter.type === 'all') return true;
 
+        // Sprawdź czy sentAt istnieje
+        if (!inv.sentAt) return true; // Pokaż zaproszenia bez daty
+
         const sentDate = new Date(inv.sentAt);
+        if (isNaN(sentDate.getTime())) return true; // Invalid date - pokaż
+
         const sentDay = new Date(sentDate.getFullYear(), sentDate.getMonth(), sentDate.getDate());
 
         switch (StatsFilter.type) {
