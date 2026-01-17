@@ -279,6 +279,9 @@ async function initGenerator() {
     // Render history
     renderHistory();
 
+    // Initialize invitation selection (checkboxes)
+    initInvitationSelection();
+
     // Initialize dashboard tabs
     initDashboardTabs();
 
@@ -943,17 +946,20 @@ function openPreview() {
 
 function renderHistory() {
     const tbody = document.getElementById('historyBody');
+    const selectAllCheckbox = document.getElementById('selectAllInvitations');
 
     if (AppState.history.length === 0) {
         tbody.innerHTML = `
             <tr class="empty-row">
-                <td colspan="6">Brak wysłanych zaproszeń</td>
+                <td colspan="7">Brak wysłanych zaproszeń</td>
             </tr>
         `;
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        updateDeleteSelectedButton();
         return;
     }
 
-    tbody.innerHTML = AppState.history.slice(0, 20).map(inv => {
+    tbody.innerHTML = AppState.history.slice(0, 50).map(inv => {
         const date = new Date(inv.createdAt);
         const dateStr = date.toLocaleDateString('pl-PL', {
             day: '2-digit',
@@ -976,7 +982,10 @@ function renderHistory() {
         if (inv.partnerEmail) extraInfo.push(`✉️ ${inv.partnerEmail}`);
 
         return `
-            <tr>
+            <tr data-id="${inv.id}">
+                <td class="td-checkbox">
+                    <input type="checkbox" class="invitation-checkbox" data-id="${inv.id}" onchange="updateDeleteSelectedButton()">
+                </td>
                 <td>${dateStr}</td>
                 <td>
                     <strong>${inv.partnerName}</strong>
@@ -990,13 +999,17 @@ function renderHistory() {
                         ${statusIcon} ${statusText}
                     </span>
                 </td>
-                <td>
+                <td class="td-actions">
                     <button class="action-btn" onclick="copyInvitationLink('${inv.id}')" title="Kopiuj link">🔗</button>
                     <button class="action-btn" onclick="openInvitationLink('${inv.id}')" title="Otwórz">🚀</button>
+                    <button class="action-btn action-btn-delete" onclick="deleteInvitation('${inv.id}')" title="Usuń">🗑️</button>
                 </td>
             </tr>
         `;
     }).join('');
+
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    updateDeleteSelectedButton();
 }
 
 function copyInvitationLink(id) {
@@ -1016,7 +1029,10 @@ function openInvitationLink(id) {
 }
 
 function clearHistory() {
-    if (confirm('Czy na pewno chcesz wyczyścić historię?')) {
+    if (confirm('Czy na pewno chcesz wyczyścić całą historię?')) {
+        // Usuń wszystko z Supabase
+        deleteAllInvitationsFromSupabase();
+
         AppState.history = [];
         AppState.stats = { sent: 0, opened: 0, converted: 0 };
         saveState();
@@ -1025,6 +1041,141 @@ function clearHistory() {
         showToast('Historia wyczyszczona', 'success');
     }
 }
+
+// Usuwanie pojedynczego zaproszenia
+async function deleteInvitation(id) {
+    if (!confirm('Czy na pewno chcesz usunąć to zaproszenie?')) return;
+
+    // Usuń z Supabase
+    const sb = getSupabase();
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('invitations')
+                .delete()
+                .eq('id', id);
+            if (error) console.error('Error deleting invitation from Supabase:', error);
+        } catch (err) {
+            console.error('Error deleting invitation from Supabase:', err);
+        }
+    }
+
+    // Usuń z lokalnego state
+    const inv = AppState.history.find(i => i.id === id);
+    if (inv) {
+        // Zaktualizuj statystyki
+        AppState.stats.sent--;
+        if (inv.status === 'opened' || inv.status === 'registered') AppState.stats.opened--;
+        if (inv.status === 'registered') AppState.stats.converted--;
+    }
+
+    AppState.history = AppState.history.filter(i => i.id !== id);
+    saveState();
+    updateStatsDisplay();
+    renderHistory();
+    showToast('Zaproszenie usunięte', 'success');
+}
+
+// Usuwanie wielu zaznaczonych zaproszeń
+async function deleteSelectedInvitations() {
+    const checkboxes = document.querySelectorAll('.invitation-checkbox:checked');
+    const ids = Array.from(checkboxes).map(cb => cb.dataset.id);
+
+    if (ids.length === 0) return;
+
+    if (!confirm(`Czy na pewno chcesz usunąć ${ids.length} zaproszenie(a)?`)) return;
+
+    // Usuń z Supabase
+    const sb = getSupabase();
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('invitations')
+                .delete()
+                .in('id', ids);
+            if (error) console.error('Error deleting invitations from Supabase:', error);
+        } catch (err) {
+            console.error('Error deleting invitations from Supabase:', err);
+        }
+    }
+
+    // Zaktualizuj statystyki i usuń z lokalnego state
+    ids.forEach(id => {
+        const inv = AppState.history.find(i => i.id === id);
+        if (inv) {
+            AppState.stats.sent--;
+            if (inv.status === 'opened' || inv.status === 'registered') AppState.stats.opened--;
+            if (inv.status === 'registered') AppState.stats.converted--;
+        }
+    });
+
+    AppState.history = AppState.history.filter(i => !ids.includes(i.id));
+    saveState();
+    updateStatsDisplay();
+    renderHistory();
+    showToast(`Usunięto ${ids.length} zaproszenie(a)`, 'success');
+}
+
+// Usuń wszystkie z Supabase
+async function deleteAllInvitationsFromSupabase() {
+    const sb = getSupabase();
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('invitations')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000'); // Usuwa wszystko
+            if (error) console.error('Error clearing invitations from Supabase:', error);
+        } catch (err) {
+            console.error('Error clearing invitations from Supabase:', err);
+        }
+    }
+}
+
+// Aktualizacja przycisku "Usuń zaznaczone"
+function updateDeleteSelectedButton() {
+    const checkboxes = document.querySelectorAll('.invitation-checkbox:checked');
+    const count = checkboxes.length;
+    const btn = document.getElementById('btnDeleteSelected');
+    const countSpan = document.getElementById('selectedCount');
+
+    if (btn) {
+        btn.style.display = count > 0 ? 'inline-flex' : 'none';
+    }
+    if (countSpan) {
+        countSpan.textContent = count;
+    }
+}
+
+// Zaznacz/odznacz wszystkie
+function toggleSelectAllInvitations() {
+    const selectAll = document.getElementById('selectAllInvitations');
+    const checkboxes = document.querySelectorAll('.invitation-checkbox');
+
+    checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+    });
+
+    updateDeleteSelectedButton();
+}
+
+// Inicjalizacja obsługi usuwania zaproszeń
+function initInvitationSelection() {
+    const selectAll = document.getElementById('selectAllInvitations');
+    const btnDeleteSelected = document.getElementById('btnDeleteSelected');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', toggleSelectAllInvitations);
+    }
+
+    if (btnDeleteSelected) {
+        btnDeleteSelected.addEventListener('click', deleteSelectedInvitations);
+    }
+}
+
+// Dodaj do globalnego window
+window.deleteInvitation = deleteInvitation;
+window.updateDeleteSelectedButton = updateDeleteSelectedButton;
 
 // ============ LANDING MODE ============
 function initLanding() {

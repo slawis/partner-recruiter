@@ -243,14 +243,18 @@
                             <h3>Historia zaproszeń</h3>
                             <p>Lista wszystkich wygenerowanych zaproszeń</p>
                         </div>
+                        <button class="btn-delete-selected" id="btnDeleteSelected" style="display: none;">
+                            <span>🗑️</span> Usuń zaznaczone (<span id="selectedCount">0</span>)
+                        </button>
                         <button class="btn-clear-history" id="btnClearHistory">
-                            <span>🗑️</span> Wyczyść
+                            <span>🗑️</span> Wyczyść wszystko
                         </button>
                     </div>
                     <div class="history-table-wrapper">
                         <table class="history-table">
                             <thead>
                                 <tr>
+                                    <th class="th-checkbox"><input type="checkbox" id="selectAllInvitations" title="Zaznacz wszystkie"></th>
                                     <th>Data</th>
                                     <th>Pośrednik</th>
                                     <th>Zapraszający</th>
@@ -261,7 +265,7 @@
                             </thead>
                             <tbody id="historyBody">
                                 <tr class="empty-row">
-                                    <td colspan="6">Brak wysłanych zaproszeń</td>
+                                    <td colspan="7">Brak wysłanych zaproszeń</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -691,6 +691,68 @@ a:hover {
     font-style: italic;
 }
 
+/* Checkbox column */
+.th-checkbox,
+.td-checkbox {
+    width: 40px;
+    text-align: center;
+    padding: var(--spacing-sm) !important;
+}
+
+.invitation-checkbox,
+#selectAllInvitations {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+/* Action buttons in history */
+.td-actions {
+    white-space: nowrap;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: all var(--transition-fast);
+    border-radius: var(--radius-sm);
+}
+
+.action-btn:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+}
+
+.action-btn-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Delete selected button */
+.btn-delete-selected {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 8px 16px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-right: var(--spacing-sm);
+}
+
+.btn-delete-selected:hover {
+    background: #dc2626;
+}
+
 /* Status Badges */
 .status-badge {
     display: inline-flex;
