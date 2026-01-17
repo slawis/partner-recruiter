@@ -75,6 +75,19 @@ posrednik.app`
     }
 };
 
+// ============ SUPABASE CONFIG ============
+const SUPABASE_URL = 'https://rgcvncpmcmqskrybobbd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY3ZuY3BtY21xc2tyeWJvYmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2MjYzODgsImV4cCI6MjA4NDIwMjM4OH0.f-FK_pgCqb0Yx_xRXsN1cxdmOVeVA3ECIEurIFtvJJA';
+
+// Inicjalizacja klienta Supabase
+let supabaseClient = null;
+function getSupabase() {
+    if (!supabaseClient && window.supabase) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+    return supabaseClient;
+}
+
 // ============ STATE ============
 let AppState = {
     mode: 'generator', // 'generator' or 'landing'
@@ -99,12 +112,12 @@ let AppState = {
 };
 
 // ============ INITIALIZATION ============
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     detectMode();
-    loadState();
+    await loadState();
 
     if (AppState.mode === 'generator') {
-        initGenerator();
+        await initGenerator();
     } else {
         initLanding();
     }
@@ -171,7 +184,49 @@ function detectMode() {
     }
 }
 
-function loadState() {
+async function loadState() {
+    const sb = getSupabase();
+
+    if (sb) {
+        try {
+            // Załaduj invitations z Supabase
+            const { data: invitations, error: invError } = await sb
+                .from('invitations')
+                .select('*')
+                .order('sent_at', { ascending: false });
+
+            if (invError) throw invError;
+
+            if (invitations && invitations.length > 0) {
+                // Mapuj dane z Supabase na format aplikacji
+                AppState.history = invitations.map(inv => ({
+                    id: inv.id,
+                    partnerName: inv.partner_name,
+                    partnerPhone: inv.partner_phone || '',
+                    partnerEmail: inv.partner_email || '',
+                    inviterKey: inv.inviter_key,
+                    status: inv.status,
+                    link: inv.link || '',
+                    sentAt: inv.sent_at,
+                    openedAt: inv.opened_at,
+                    registeredAt: inv.registered_at
+                }));
+
+                // Oblicz statystyki
+                AppState.stats = {
+                    sent: invitations.length,
+                    opened: invitations.filter(i => i.status === 'opened' || i.status === 'registered').length,
+                    converted: invitations.filter(i => i.status === 'registered').length
+                };
+                console.log('Invitations loaded from Supabase:', AppState.history.length);
+                return;
+            }
+        } catch (err) {
+            console.error('Error loading invitations from Supabase:', err);
+        }
+    }
+
+    // Fallback: localStorage
     const savedHistory = localStorage.getItem('recruiter_history');
     const savedStats = localStorage.getItem('recruiter_stats');
 
@@ -183,13 +238,41 @@ function loadState() {
     }
 }
 
-function saveState() {
+async function saveState() {
+    // Zawsze zapisz do localStorage jako backup
     localStorage.setItem('recruiter_history', JSON.stringify(AppState.history));
     localStorage.setItem('recruiter_stats', JSON.stringify(AppState.stats));
 }
 
+async function saveInvitationToSupabase(invitation) {
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        const { error } = await sb
+            .from('invitations')
+            .upsert({
+                id: invitation.id,
+                inviter_key: invitation.inviterKey,
+                partner_name: invitation.partnerName,
+                partner_phone: invitation.partnerPhone || '',
+                partner_email: invitation.partnerEmail || '',
+                status: invitation.status || 'sent',
+                link: invitation.link || '',
+                sent_at: invitation.sentAt || new Date().toISOString(),
+                opened_at: invitation.openedAt || null,
+                registered_at: invitation.registeredAt || null
+            }, { onConflict: 'id' });
+
+        if (error) throw error;
+        console.log('Invitation saved to Supabase:', invitation.id);
+    } catch (err) {
+        console.error('Error saving invitation to Supabase:', err);
+    }
+}
+
 // ============ GENERATOR MODE ============
-function initGenerator() {
+async function initGenerator() {
     // Update stats display
     updateStatsDisplay();
 
@@ -200,7 +283,7 @@ function initGenerator() {
     initDashboardTabs();
 
     // Initialize calendar
-    initCalendar();
+    await initCalendar();
 
     // Style selector
     const styleOptions = document.querySelectorAll('.style-option');
@@ -269,8 +352,8 @@ function initDashboardTabs() {
 // ============ CALENDAR ============
 let calendarFilter = 'all';
 
-function cleanupDuplicateMeetings() {
-    const meetings = getMeetings();
+async function cleanupDuplicateMeetings() {
+    const meetings = await getMeetings();
     if (meetings.length === 0) return;
 
     const seen = new Map();
@@ -302,41 +385,108 @@ function cleanupDuplicateMeetings() {
     }
 }
 
-function initCalendar() {
+async function initCalendar() {
     // Cleanup duplicates on init
-    cleanupDuplicateMeetings();
+    await cleanupDuplicateMeetings();
 
     // Initialize filter buttons
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
             filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             calendarFilter = btn.dataset.filter;
-            renderMeetings();
+            await renderMeetings();
         });
     });
 
     // Load and render meetings
-    renderMeetings();
-    updateCalendarStats();
-    updateBadgeCounts();
+    await renderMeetings();
+    await updateCalendarStats();
+    await updateBadgeCounts();
 }
 
-function getMeetings() {
+async function getMeetings() {
+    const sb = getSupabase();
+
+    if (sb) {
+        try {
+            const { data, error } = await sb
+                .from('meetings')
+                .select('*')
+                .order('meeting_date', { ascending: true });
+
+            if (error) throw error;
+
+            if (data) {
+                // Mapuj dane z Supabase na format aplikacji
+                return data.map(m => ({
+                    id: m.id,
+                    invitationId: m.invitation_id,
+                    inviterKey: m.inviter_key,
+                    inviterName: m.inviter_key, // Do uzupełnienia z inviters
+                    partnerName: m.partner_name,
+                    partnerPhone: m.partner_phone || '',
+                    partnerEmail: m.partner_email || '',
+                    date: m.meeting_date,
+                    time: m.meeting_time,
+                    method: m.method,
+                    scheduledAt: m.scheduled_at
+                }));
+            }
+        } catch (err) {
+            console.error('Error loading meetings from Supabase:', err);
+        }
+    }
+
+    // Fallback: localStorage
     const saved = localStorage.getItem('scheduledMeetings');
     return saved ? JSON.parse(saved) : [];
 }
 
-function saveMeetings(meetings) {
+function getMeetingsSync() {
+    // Synchroniczna wersja dla kompatybilności
+    const saved = localStorage.getItem('scheduledMeetings');
+    return saved ? JSON.parse(saved) : [];
+}
+
+async function saveMeetings(meetings) {
+    // Zawsze zapisz do localStorage jako backup
     localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
 }
 
-function renderMeetings() {
+async function saveMeetingToSupabase(meeting) {
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        const { error } = await sb
+            .from('meetings')
+            .upsert({
+                id: meeting.id,
+                invitation_id: meeting.invitationId || null,
+                inviter_key: meeting.inviterKey || meeting.inviterName || '',
+                partner_name: meeting.partnerName,
+                partner_phone: meeting.partnerPhone || '',
+                partner_email: meeting.partnerEmail || '',
+                meeting_date: meeting.date,
+                meeting_time: meeting.time,
+                method: meeting.method,
+                scheduled_at: meeting.scheduledAt || new Date().toISOString()
+            }, { onConflict: 'id' });
+
+        if (error) throw error;
+        console.log('Meeting saved to Supabase:', meeting.id);
+    } catch (err) {
+        console.error('Error saving meeting to Supabase:', err);
+    }
+}
+
+async function renderMeetings() {
     const container = document.getElementById('meetingsList');
     if (!container) return;
 
-    let meetings = getMeetings();
+    let meetings = await getMeetings();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -424,8 +574,8 @@ function renderMeetings() {
     container.innerHTML = html;
 }
 
-function updateCalendarStats() {
-    const meetings = getMeetings();
+async function updateCalendarStats() {
+    const meetings = await getMeetings();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -453,8 +603,8 @@ function updateCalendarStats() {
     if (statTotal) statTotal.textContent = totalMeetings;
 }
 
-function updateBadgeCounts() {
-    const meetings = getMeetings();
+async function updateBadgeCounts() {
+    const meetings = await getMeetings();
     const history = AppState.history || [];
 
     const historyCount = document.getElementById('historyCount');
@@ -464,16 +614,31 @@ function updateBadgeCounts() {
     if (meetingsCount) meetingsCount.textContent = meetings.length;
 }
 
-function deleteMeeting(meetingId) {
+async function deleteMeeting(meetingId) {
     if (!confirm('Czy na pewno chcesz usunąć to spotkanie?')) return;
 
-    let meetings = getMeetings();
-    meetings = meetings.filter(m => m.id !== meetingId);
-    saveMeetings(meetings);
+    // Usuń z Supabase
+    const sb = getSupabase();
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('meetings')
+                .delete()
+                .eq('id', meetingId);
+            if (error) console.error('Error deleting meeting from Supabase:', error);
+        } catch (err) {
+            console.error('Error deleting meeting from Supabase:', err);
+        }
+    }
 
-    renderMeetings();
-    updateCalendarStats();
-    updateBadgeCounts();
+    // Usuń z localStorage
+    let meetings = await getMeetings();
+    meetings = meetings.filter(m => m.id !== meetingId);
+    await saveMeetings(meetings);
+
+    await renderMeetings();
+    await updateCalendarStats();
+    await updateBadgeCounts();
     showToast('Spotkanie usunięte', 'success');
 }
 
@@ -621,6 +786,18 @@ function handleGenerateInvitation(e) {
     AppState.history.unshift(AppState.currentInvitation);
     AppState.stats.sent++;
     saveState();
+
+    // Zapisz do Supabase
+    saveInvitationToSupabase({
+        id: invitationId,
+        partnerName,
+        partnerPhone,
+        partnerEmail,
+        inviterKey,
+        status: 'sent',
+        link,
+        sentAt: new Date().toISOString()
+    });
 
     // Update UI
     updateStatsDisplay();
@@ -1611,8 +1788,33 @@ function handleMeetingSchedule(e) {
     showToast('Spotkanie umówione!', 'success');
 }
 
-function trackOpening(invitationId) {
-    // Load history from localStorage
+async function trackOpening(invitationId) {
+    if (!invitationId) return;
+
+    const sb = getSupabase();
+
+    // Próbuj zaktualizować w Supabase
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('invitations')
+                .update({
+                    status: 'opened',
+                    opened_at: new Date().toISOString()
+                })
+                .eq('id', invitationId)
+                .eq('status', 'sent');
+
+            if (!error) {
+                console.log('Invitation opened tracked in Supabase:', invitationId);
+                return;
+            }
+        } catch (err) {
+            console.error('Error tracking opening in Supabase:', err);
+        }
+    }
+
+    // Fallback: localStorage
     const savedHistory = localStorage.getItem('recruiter_history');
     if (savedHistory) {
         const history = JSON.parse(savedHistory);
@@ -1635,7 +1837,37 @@ function trackOpening(invitationId) {
     }
 }
 
-function updateInvitationStatus(invitationId, status) {
+async function updateInvitationStatus(invitationId, status) {
+    if (!invitationId) return;
+
+    const sb = getSupabase();
+    const now = new Date().toISOString();
+
+    // Próbuj zaktualizować w Supabase
+    if (sb) {
+        try {
+            const updateData = { status };
+            if (status === 'registered') {
+                updateData.registered_at = now;
+            } else if (status === 'opened') {
+                updateData.opened_at = now;
+            }
+
+            const { error } = await sb
+                .from('invitations')
+                .update(updateData)
+                .eq('id', invitationId);
+
+            if (!error) {
+                console.log('Invitation status updated in Supabase:', invitationId, status);
+                return;
+            }
+        } catch (err) {
+            console.error('Error updating invitation status in Supabase:', err);
+        }
+    }
+
+    // Fallback: localStorage
     const savedHistory = localStorage.getItem('recruiter_history');
     if (savedHistory) {
         const history = JSON.parse(savedHistory);
@@ -1644,7 +1876,7 @@ function updateInvitationStatus(invitationId, status) {
         if (invitation) {
             invitation.status = status;
             if (status === 'registered') {
-                invitation.registeredAt = new Date().toISOString();
+                invitation.registeredAt = now;
 
                 // Update stats
                 const savedStats = localStorage.getItem('recruiter_stats');
@@ -1696,9 +1928,9 @@ let InvitersState = {
     editingId: null
 };
 
-function initSettings() {
+async function initSettings() {
     // Load saved inviters
-    loadInviters();
+    await loadInviters();
 
     // Open/Close settings
     const btnOpen = document.getElementById('btnOpenSettings');
@@ -1742,7 +1974,40 @@ function closeSettings() {
     document.body.style.overflow = '';
 }
 
-function loadInviters() {
+async function loadInviters() {
+    const sb = getSupabase();
+
+    if (sb) {
+        try {
+            const { data, error } = await sb
+                .from('inviters')
+                .select('*')
+                .order('created_at', { ascending: true });
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                // Mapuj dane z Supabase na format aplikacji
+                InvitersState.inviters = data.map(inv => ({
+                    id: inv.id,
+                    key: inv.key,
+                    name: inv.name,
+                    role: inv.role || '',
+                    phone: inv.phone || '',
+                    email: inv.email || '',
+                    bio: inv.bio || '',
+                    photo: inv.photo_url || ''
+                }));
+                updateConfigInviters();
+                console.log('Inviters loaded from Supabase:', InvitersState.inviters.length);
+                return;
+            }
+        } catch (err) {
+            console.error('Error loading from Supabase:', err);
+        }
+    }
+
+    // Fallback: localStorage lub domyślne
     const saved = localStorage.getItem('recruiter_inviters');
     if (saved) {
         InvitersState.inviters = JSON.parse(saved);
@@ -1762,10 +2027,42 @@ function loadInviters() {
     }
 }
 
-function saveInviters() {
+async function saveInviters() {
+    // Zawsze zapisz do localStorage jako backup
     localStorage.setItem('recruiter_inviters', JSON.stringify(InvitersState.inviters));
+    updateConfigInviters();
 
-    // Also update CONFIG.inviters for backward compatibility
+    // Próbuj zapisać do Supabase
+    const sb = getSupabase();
+    if (sb) {
+        try {
+            // Dla każdego invitera - upsert do Supabase
+            for (const inv of InvitersState.inviters) {
+                const { error } = await sb
+                    .from('inviters')
+                    .upsert({
+                        id: inv.id.startsWith('inv_default_') ? undefined : inv.id,
+                        key: inv.key,
+                        name: inv.name,
+                        role: inv.role || '',
+                        phone: inv.phone || '',
+                        email: inv.email || '',
+                        bio: inv.bio || '',
+                        photo_url: inv.photo || '',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'key' });
+
+                if (error) throw error;
+            }
+            console.log('Inviters saved to Supabase');
+        } catch (err) {
+            console.error('Error saving to Supabase:', err);
+        }
+    }
+}
+
+function updateConfigInviters() {
+    // Update CONFIG.inviters for backward compatibility
     CONFIG.inviters = {};
     InvitersState.inviters.forEach(inv => {
         CONFIG.inviters[inv.key] = {
@@ -1793,7 +2090,7 @@ function generateInviterKey(name) {
     return key;
 }
 
-function handleAddInviter(e) {
+async function handleAddInviter(e) {
     e.preventDefault();
 
     const name = document.getElementById('inviterName').value.trim();
@@ -1820,7 +2117,7 @@ function handleAddInviter(e) {
     };
 
     InvitersState.inviters.push(newInviter);
-    saveInviters();
+    await saveInviters();
 
     // Reset form
     document.getElementById('addInviterForm').reset();
@@ -1832,7 +2129,7 @@ function handleAddInviter(e) {
     showToast('Zapraszający dodany!', 'success');
 }
 
-function handleEditInviter(e) {
+async function handleEditInviter(e) {
     e.preventDefault();
 
     const id = document.getElementById('editInviterId').value;
@@ -1860,7 +2157,7 @@ function handleEditInviter(e) {
         inviter.photo = photo;
         InvitersState.editingId = null;
 
-        saveInviters();
+        await saveInviters();
         renderInvitersList();
         updateInviterSelect();
         closeEditInviterModal();
@@ -1889,11 +2186,25 @@ function closeEditInviterModal() {
     document.getElementById('editInviterForm').reset();
 }
 
-function deleteInviter(id) {
+async function deleteInviter(id) {
     if (!confirm('Czy na pewno chcesz usunąć tego zapraszającego?')) return;
 
+    // Usuń z Supabase jeśli dostępne
+    const sb = getSupabase();
+    if (sb && !id.startsWith('inv_default_')) {
+        try {
+            const { error } = await sb
+                .from('inviters')
+                .delete()
+                .eq('id', id);
+            if (error) console.error('Error deleting from Supabase:', error);
+        } catch (err) {
+            console.error('Error deleting from Supabase:', err);
+        }
+    }
+
     InvitersState.inviters = InvitersState.inviters.filter(inv => inv.id !== id);
-    saveInviters();
+    await saveInviters();
     renderInvitersList();
     updateInviterSelect();
 
@@ -2002,9 +2313,9 @@ generateLink = generateLinkWithInviterDetails;
 
 // Update initGenerator to include settings init
 const originalInitGenerator = initGenerator;
-initGenerator = function() {
-    originalInitGenerator();
-    initSettings();
+initGenerator = async function() {
+    await originalInitGenerator();
+    await initSettings();
 };
 
 // Personalizacja jest teraz obsługiwana centralnie przez personalizeContent()
@@ -2380,6 +2691,9 @@ function handleMobileScheduleSubmit(e) {
     meetings.push(meeting);
     localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
 
+    // Zapisz do Supabase
+    saveMeetingToSupabase(meeting);
+
     // Update invitation status
     if (AppState.landingParams.invitationId) {
         updateInvitationStatus(AppState.landingParams.invitationId, 'registered');
@@ -2713,6 +3027,14 @@ function handleDesktopScheduleSubmit(e) {
 
     meetings.push(meeting);
     localStorage.setItem('scheduledMeetings', JSON.stringify(meetings));
+
+    // Zapisz do Supabase
+    saveMeetingToSupabase(meeting);
+
+    // Update invitation status
+    if (AppState.landingParams.invitationId) {
+        updateInvitationStatus(AppState.landingParams.invitationId, 'registered');
+    }
 
     // Show success modal
     const date = new Date(selectedDate);
