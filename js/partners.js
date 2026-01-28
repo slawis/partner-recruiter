@@ -471,28 +471,54 @@ function renderPartnersSection() {
         return;
     }
 
-    container.innerHTML = filtered.map(partner => renderPartnerCard(partner)).join('');
+    container.innerHTML = `
+        <div class="partners-table-wrapper">
+            <table class="partners-table">
+                <thead>
+                    <tr>
+                        <th class="th-name">Pośrednik</th>
+                        <th class="th-contact">Kontakt</th>
+                        <th class="th-status">Status</th>
+                        <th class="th-stats">Statystyki</th>
+                        <th class="th-date">Data dodania</th>
+                        <th class="th-actions">Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filtered.map(partner => renderPartnerRow(partner)).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
 
-// ============ RENDER PARTNER CARD ============
-function renderPartnerCard(partner) {
+// ============ RENDER PARTNER ROW ============
+function renderPartnerRow(partner) {
     const statusConfig = PARTNER_STATUSES[partner.status] || PARTNER_STATUSES.lead;
     const fullName = partner.lastName ? `${partner.name} ${partner.lastName}` : partner.name;
 
     const createdDate = partner.createdAt
         ? new Date(partner.createdAt).toLocaleDateString('pl-PL')
-        : '';
+        : '-';
 
     return `
-        <div class="partner-card" data-id="${partner.id}">
-            <div class="partner-card-header">
-                <div class="partner-avatar-placeholder">👤</div>
-                <div class="partner-info">
-                    <h3 class="partner-name">${fullName}</h3>
-                    ${partner.company ? `<span class="partner-company">${partner.company}</span>` : ''}
+        <tr data-id="${partner.id}">
+            <td class="td-name">
+                <div class="partner-name-cell">
+                    <strong>${fullName}</strong>
+                    ${partner.company ? `<span class="partner-company-label">${partner.company}</span>` : ''}
                 </div>
+            </td>
+            <td class="td-contact">
+                <div class="partner-contact-cell">
+                    ${partner.phone ? `<a href="tel:${partner.phone}" class="contact-link">📞 ${formatPhone(partner.phone)}</a>` : ''}
+                    ${partner.email ? `<a href="mailto:${partner.email}" class="contact-link">✉️ ${partner.email}</a>` : ''}
+                    ${!partner.phone && !partner.email ? '<span class="no-contact">-</span>' : ''}
+                </div>
+            </td>
+            <td class="td-status">
                 <div class="partner-status-dropdown">
-                    <button class="partner-status-btn status-${statusConfig.color}" onclick="togglePartnerStatusDropdown('${partner.id}')">
+                    <button class="status-badge-btn status-${statusConfig.color}" onclick="togglePartnerStatusDropdown('${partner.id}')">
                         ${statusConfig.icon} ${statusConfig.label}
                         <span class="dropdown-arrow">▼</span>
                     </button>
@@ -504,49 +530,26 @@ function renderPartnerCard(partner) {
                         `).join('')}
                     </div>
                 </div>
-                <button class="partner-menu-btn" onclick="togglePartnerMenu('${partner.id}')" title="Menu">⋮</button>
-                <div class="partner-menu" id="partnerMenu-${partner.id}">
-                    <button onclick="openEditPartnerModal('${partner.id}')">✏️ Edytuj</button>
-                    <button onclick="openPartnerNotesModal('${partner.id}')">📝 Notatki</button>
-                    <button class="danger" onclick="deletePartner('${partner.id}')">🗑️ Usuń</button>
+            </td>
+            <td class="td-stats">
+                <div class="partner-stats-cell">
+                    <span class="stat-item" title="Zaproszenia">📤 ${partner.invitationsCount || 0}</span>
+                    <span class="stat-item" title="Spotkania">📅 ${partner.meetingsCount || 0}</span>
                 </div>
-            </div>
-
-            <div class="partner-card-body">
-                <div class="partner-contacts">
-                    ${partner.phone ? `
-                        <div class="partner-contact">
-                            <span class="partner-contact-icon">📞</span>
-                            <a href="tel:${partner.phone}">${formatPhone(partner.phone)}</a>
-                        </div>
-                    ` : ''}
-                    ${partner.email ? `
-                        <div class="partner-contact">
-                            <span class="partner-contact-icon">✉️</span>
-                            <a href="mailto:${partner.email}">${partner.email}</a>
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-
-            <div class="partner-card-footer">
-                <div class="partner-stats">
-                    <span class="partner-stat" title="Zaproszenia">
-                        <span class="stat-icon">📤</span>
-                        <span class="stat-value">${partner.invitationsCount || 0}</span>
-                    </span>
-                    <span class="partner-stat" title="Spotkania">
-                        <span class="stat-icon">📅</span>
-                        <span class="stat-value">${partner.meetingsCount || 0}</span>
-                    </span>
-                </div>
-                <div class="partner-meta">
-                    ${partner.inviterKey ? `<span class="partner-inviter">👤 ${partner.createdByName || partner.inviterKey}</span>` : ''}
-                    ${createdDate ? `<span class="partner-date">${createdDate}</span>` : ''}
-                </div>
-            </div>
-        </div>
+            </td>
+            <td class="td-date">${createdDate}</td>
+            <td class="td-actions">
+                <button class="action-btn" onclick="openEditPartnerModal('${partner.id}')" title="Edytuj">✏️</button>
+                <button class="action-btn" onclick="openPartnerNotesModal('${partner.id}')" title="Notatki">📝</button>
+                <button class="action-btn action-btn-delete" onclick="deletePartner('${partner.id}')" title="Usuń">🗑️</button>
+            </td>
+        </tr>
     `;
+}
+
+// Legacy alias for compatibility
+function renderPartnerCard(partner) {
+    return renderPartnerRow(partner);
 }
 
 // ============ UI INTERACTIONS ============

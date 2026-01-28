@@ -691,13 +691,10 @@
 }
 
 .partners-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--spacing-lg);
+    width: 100%;
 }
 
 .partners-empty {
-    grid-column: 1 / -1;
     text-align: center;
     padding: 60px 20px;
     background: var(--bg-card);
@@ -724,6 +721,256 @@
     color: var(--text-muted);
 }
 
+/* ===== PARTNERS TABLE ===== */
+.partners-table-wrapper {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+}
+
+.partners-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.partners-table thead {
+    background: var(--bg-subtle);
+    border-bottom: 2px solid var(--border-light);
+}
+
+.partners-table th {
+    padding: 14px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.partners-table tbody tr {
+    border-bottom: 1px solid var(--border-light);
+    transition: background 0.15s ease;
+}
+
+.partners-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.partners-table tbody tr:hover {
+    background: var(--bg-hover);
+}
+
+.partners-table td {
+    padding: 14px 16px;
+    vertical-align: middle;
+}
+
+/* Name column */
+.td-name {
+    min-width: 180px;
+}
+
+.partner-name-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.partner-name-cell strong {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.partner-company-label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Contact column */
+.td-contact {
+    min-width: 200px;
+}
+
+.partner-contact-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.contact-link {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.15s ease;
+}
+
+.contact-link:hover {
+    color: var(--primary);
+}
+
+.no-contact {
+    color: var(--text-muted);
+}
+
+/* Status column */
+.td-status {
+    min-width: 140px;
+}
+
+.status-badge-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.status-badge-btn .dropdown-arrow {
+    font-size: 8px;
+    opacity: 0.6;
+    margin-left: 2px;
+}
+
+.status-badge-btn.status-gray {
+    background: var(--bg-subtle);
+    color: var(--text-secondary);
+}
+
+.status-badge-btn.status-blue {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.status-badge-btn.status-yellow {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-badge-btn.status-green {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.status-badge-btn.status-red {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status-badge-btn:hover {
+    filter: brightness(0.95);
+}
+
+/* Stats column */
+.td-stats {
+    min-width: 120px;
+}
+
+.partner-stats-cell {
+    display: flex;
+    gap: 12px;
+}
+
+.stat-item {
+    font-size: 13px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Date column */
+.td-date {
+    min-width: 100px;
+    color: var(--text-muted);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* Actions column */
+.td-actions {
+    min-width: 100px;
+    white-space: nowrap;
+}
+
+.td-actions .action-btn {
+    background: none;
+    border: none;
+    padding: 6px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+    border-radius: var(--radius-sm);
+}
+
+.td-actions .action-btn:hover {
+    opacity: 1;
+    background: var(--bg-hover);
+}
+
+.td-actions .action-btn-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Status dropdown menu */
+.partner-status-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.partner-status-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    z-index: 100;
+    min-width: 160px;
+    padding: 4px;
+    display: none;
+}
+
+.partner-status-menu.active {
+    display: block;
+}
+
+.status-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    transition: background 0.15s ease;
+}
+
+.status-menu-item:hover {
+    background: var(--bg-hover);
+}
+
+.status-menu-item.active {
+    background: var(--primary-bg);
+    color: var(--primary);
+    font-weight: 500;
+}
+
+/* Legacy card styles - keep for compatibility */
 .partner-card {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
