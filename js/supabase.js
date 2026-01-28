@@ -123,6 +123,13 @@ async function trackOpening(invitationId) {
 
     console.log('trackOpening called for:', invitationId);
 
+    // Sprawdź czy invitationId jest prawidłowym UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(invitationId)) {
+        console.log('trackOpening: invitationId is not UUID, skipping Supabase');
+        return;
+    }
+
     // Poczekaj aż Supabase będzie gotowy i przetestuj połączenie
     const sb = await waitForSupabase();
 
@@ -130,49 +137,25 @@ async function trackOpening(invitationId) {
         if (typeof showToast === 'function') {
             showToast('⚠️ Baza niedostępna - dane zapisane lokalnie', 'warning');
         }
+        return;
     }
 
     // Próbuj zaktualizować w Supabase
-    if (sb) {
-        try {
-            const { error } = await sb
-                .from('invitations')
-                .update({
-                    status: 'opened',
-                    opened_at: new Date().toISOString()
-                })
-                .eq('id', invitationId)
-                .eq('status', 'sent');
+    try {
+        const { error } = await sb
+            .from('invitations')
+            .update({
+                status: 'opened',
+                opened_at: new Date().toISOString()
+            })
+            .eq('id', invitationId)
+            .eq('status', 'sent');
 
-            if (!error) {
-                console.log('Invitation opened tracked in Supabase:', invitationId);
-                return;
-            }
-        } catch (err) {
-            console.error('Error tracking opening in Supabase:', err);
+        if (!error) {
+            console.log('Invitation opened tracked in Supabase:', invitationId);
         }
-    }
-
-    // Fallback: localStorage
-    const savedHistory = localStorage.getItem('recruiter_history');
-    if (savedHistory) {
-        const history = JSON.parse(savedHistory);
-        const invitation = history.find(inv => inv.id === invitationId);
-
-        if (invitation && invitation.status === 'sent') {
-            invitation.status = 'opened';
-            invitation.openedAt = new Date().toISOString();
-
-            // Update stats
-            const savedStats = localStorage.getItem('recruiter_stats');
-            if (savedStats) {
-                const stats = JSON.parse(savedStats);
-                stats.opened++;
-                localStorage.setItem('recruiter_stats', JSON.stringify(stats));
-            }
-
-            localStorage.setItem('recruiter_history', JSON.stringify(history));
-        }
+    } catch (err) {
+        console.error('Error tracking opening in Supabase:', err);
     }
 }
 
@@ -180,6 +163,13 @@ async function updateInvitationStatus(invitationId, status) {
     if (!invitationId) return;
 
     console.log('updateInvitationStatus called:', invitationId, status);
+
+    // Sprawdź czy invitationId jest prawidłowym UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(invitationId)) {
+        console.log('updateInvitationStatus: invitationId is not UUID, skipping Supabase');
+        return;
+    }
 
     // Poczekaj aż Supabase będzie gotowy
     const sb = await waitForSupabase();
