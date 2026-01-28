@@ -473,9 +473,16 @@ function renderPartnersSection() {
 
     container.innerHTML = `
         <div class="partners-table-wrapper">
+            <div class="partners-table-toolbar" id="partnersTableToolbar" style="display: none;">
+                <span class="selected-count"><span id="selectedPartnersCount">0</span> zaznaczonych</span>
+                <button class="btn-delete-selected" onclick="deleteSelectedPartners()">🗑️ Usuń zaznaczone</button>
+            </div>
             <table class="partners-table">
                 <thead>
                     <tr>
+                        <th class="th-checkbox">
+                            <input type="checkbox" id="selectAllPartners" onchange="toggleSelectAllPartners(this)">
+                        </th>
                         <th class="th-name">Pośrednik</th>
                         <th class="th-contact">Kontakt</th>
                         <th class="th-status">Status</th>
@@ -503,6 +510,9 @@ function renderPartnerRow(partner) {
 
     return `
         <tr data-id="${partner.id}">
+            <td class="td-checkbox">
+                <input type="checkbox" class="partner-checkbox" data-id="${partner.id}" onchange="updatePartnerSelection()">
+            </td>
             <td class="td-name">
                 <div class="partner-name-cell">
                     <strong>${fullName}</strong>
@@ -550,6 +560,82 @@ function renderPartnerRow(partner) {
 // Legacy alias for compatibility
 function renderPartnerCard(partner) {
     return renderPartnerRow(partner);
+}
+
+// ============ SELECTION FUNCTIONS ============
+function toggleSelectAllPartners(checkbox) {
+    const checkboxes = document.querySelectorAll('.partner-checkbox');
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updatePartnerSelection();
+}
+
+function updatePartnerSelection() {
+    const checkboxes = document.querySelectorAll('.partner-checkbox');
+    const checked = document.querySelectorAll('.partner-checkbox:checked');
+    const toolbar = document.getElementById('partnersTableToolbar');
+    const countSpan = document.getElementById('selectedPartnersCount');
+    const selectAll = document.getElementById('selectAllPartners');
+
+    if (countSpan) countSpan.textContent = checked.length;
+
+    if (toolbar) {
+        toolbar.style.display = checked.length > 0 ? 'flex' : 'none';
+    }
+
+    // Update "select all" checkbox state
+    if (selectAll) {
+        selectAll.checked = checkboxes.length > 0 && checked.length === checkboxes.length;
+        selectAll.indeterminate = checked.length > 0 && checked.length < checkboxes.length;
+    }
+}
+
+async function deleteSelectedPartners() {
+    const checked = document.querySelectorAll('.partner-checkbox:checked');
+    if (checked.length === 0) return;
+
+    const confirmMsg = checked.length === 1
+        ? 'Czy na pewno chcesz usunąć tego pośrednika?'
+        : `Czy na pewno chcesz usunąć ${checked.length} pośredników?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    const ids = Array.from(checked).map(cb => cb.dataset.id);
+
+    // Usuń każdego partnera
+    for (const id of ids) {
+        await deletePartnerById(id, false); // false = nie pokazuj toast dla każdego
+    }
+
+    showToast(`Usunięto ${ids.length} pośredników`, 'success');
+    renderPartnersSection();
+    updateNavigationBadges();
+}
+
+// Helper function to delete partner by ID without confirmation
+async function deletePartnerById(partnerId, showNotification = true) {
+    const sb = getSupabase();
+
+    if (sb) {
+        try {
+            const { error } = await sb
+                .from('partners')
+                .delete()
+                .eq('id', partnerId);
+
+            if (error) throw error;
+        } catch (err) {
+            console.error('Error deleting partner from Supabase:', err);
+        }
+    }
+
+    PartnersState.partners = PartnersState.partners.filter(p => p.id !== partnerId);
+    savePartnersToLocalStorage();
+
+    if (showNotification) {
+        showToast('Pośrednik usunięty', 'success');
+        renderPartnersSection();
+        updateNavigationBadges();
+    }
 }
 
 // ============ UI INTERACTIONS ============
