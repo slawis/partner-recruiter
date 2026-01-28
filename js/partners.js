@@ -623,7 +623,17 @@ function initPartnersFilters() {
             const uniqueInviters = [...new Set(PartnersState.partners.map(p => p.inviterKey).filter(Boolean))];
             inviterFilter.innerHTML = `
                 <option value="all">Wszyscy doradcy</option>
-                ${uniqueInviters.map(key => `<option value="${key}">${key}</option>`).join('')}
+                ${uniqueInviters.map(key => {
+                    // Pobierz pełną nazwę z CONFIG lub InvitersState
+                    let displayName = key;
+                    if (CONFIG && CONFIG.inviters && CONFIG.inviters[key]) {
+                        displayName = CONFIG.inviters[key].name;
+                    } else if (typeof InvitersState !== 'undefined' && InvitersState.inviters) {
+                        const inviter = InvitersState.inviters.find(i => i.key === key);
+                        if (inviter && inviter.name) displayName = inviter.name;
+                    }
+                    return `<option value="${key}">${displayName}</option>`;
+                }).join('')}
             `;
             inviterFilter.closest('.filter-group')?.classList.remove('hidden');
         }
