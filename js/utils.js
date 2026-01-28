@@ -41,8 +41,18 @@ function formatCurrencyShort(value) {
 }
 
 // ============ ID GENERATION ============
+// Generuje UUID v4 kompatybilny z Supabase
 function generateId() {
-    return 'inv_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    // Użyj crypto.randomUUID jeśli dostępne (nowoczesne przeglądarki)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // Fallback: ręczne generowanie UUID v4
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 }
 
 function generateMeetingId() {
