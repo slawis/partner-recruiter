@@ -116,20 +116,24 @@ async function loadState() {
             if (invitations && invitations.length > 0) {
                 // Mapuj dane z Supabase na format aplikacji
                 AppState.history = invitations.map(inv => {
-                    // Pobierz dane zapraszającego z CONFIG lub InvitersState
+                    // Pobierz dane zapraszającego - najpierw CONFIG, potem InvitersState
                     const inviterKey = inv.inviter_key || '';
-                    let inviterName = inviterKey;
-                    if (typeof InvitersState !== 'undefined' && InvitersState.inviters) {
-                        const inviter = InvitersState.inviters.find(i => i.key === inviterKey);
-                        if (inviter) inviterName = inviter.name;
-                    } else if (typeof CONFIG !== 'undefined' && CONFIG.inviters && CONFIG.inviters[inviterKey]) {
+                    let inviterName = inviterKey || 'Nieznany';
+
+                    // Najpierw sprawdź CONFIG (zawsze dostępny)
+                    if (CONFIG && CONFIG.inviters && CONFIG.inviters[inviterKey]) {
                         inviterName = CONFIG.inviters[inviterKey].name;
                     }
+                    // Nadpisz jeśli InvitersState ma dane
+                    if (typeof InvitersState !== 'undefined' && InvitersState.inviters && InvitersState.inviters.length > 0) {
+                        const inviter = InvitersState.inviters.find(i => i.key === inviterKey);
+                        if (inviter && inviter.name) inviterName = inviter.name;
+                    }
 
-                    // Pobierz nazwę stylu z CONFIG
+                    // Pobierz nazwę stylu z CONFIG (domyślnie 'direct' = 'Bezpośredni')
                     const styleKey = inv.style_key || 'direct';
-                    let styleName = styleKey;
-                    if (typeof CONFIG !== 'undefined' && CONFIG.emailStyles && CONFIG.emailStyles[styleKey]) {
+                    let styleName = 'Bezpośredni';
+                    if (CONFIG && CONFIG.emailStyles && CONFIG.emailStyles[styleKey]) {
                         styleName = CONFIG.emailStyles[styleKey].name;
                     }
 
