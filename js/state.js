@@ -116,24 +116,28 @@ async function loadState() {
             if (invitations && invitations.length > 0) {
                 // Mapuj dane z Supabase na format aplikacji
                 AppState.history = invitations.map(inv => {
-                    // Pobierz dane zapraszającego - najpierw CONFIG, potem InvitersState
+                    // Pobierz dane zapraszającego - najpierw z bazy, potem CONFIG
                     const inviterKey = inv.inviter_key || '';
-                    let inviterName = inviterKey || 'Nieznany';
+                    let inviterName = inv.inviter_name || inviterKey || 'Nieznany';
 
-                    // Najpierw sprawdź CONFIG (zawsze dostępny)
-                    if (CONFIG && CONFIG.inviters && CONFIG.inviters[inviterKey]) {
-                        inviterName = CONFIG.inviters[inviterKey].name;
-                    }
-                    // Nadpisz jeśli InvitersState ma dane
-                    if (typeof InvitersState !== 'undefined' && InvitersState.inviters && InvitersState.inviters.length > 0) {
-                        const inviter = InvitersState.inviters.find(i => i.key === inviterKey);
-                        if (inviter && inviter.name) inviterName = inviter.name;
+                    // Jeśli brak w bazie, sprawdź CONFIG
+                    if (!inv.inviter_name) {
+                        if (CONFIG && CONFIG.inviters && CONFIG.inviters[inviterKey]) {
+                            inviterName = CONFIG.inviters[inviterKey].name;
+                        }
+                        // Nadpisz jeśli InvitersState ma dane
+                        if (typeof InvitersState !== 'undefined' && InvitersState.inviters && InvitersState.inviters.length > 0) {
+                            const inviter = InvitersState.inviters.find(i => i.key === inviterKey);
+                            if (inviter && inviter.name) inviterName = inviter.name;
+                        }
                     }
 
-                    // Pobierz nazwę stylu z CONFIG (domyślnie 'direct' = 'Bezpośredni')
+                    // Pobierz nazwę stylu - najpierw z bazy, potem CONFIG
                     const styleKey = inv.style_key || 'direct';
-                    let styleName = 'Bezpośredni';
-                    if (CONFIG && CONFIG.emailStyles && CONFIG.emailStyles[styleKey]) {
+                    let styleName = inv.style_name || 'Bezpośredni';
+
+                    // Jeśli brak w bazie, sprawdź CONFIG
+                    if (!inv.style_name && CONFIG && CONFIG.emailStyles && CONFIG.emailStyles[styleKey]) {
                         styleName = CONFIG.emailStyles[styleKey].name;
                     }
 

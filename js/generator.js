@@ -639,9 +639,14 @@ function handleGenerateInvitation(e) {
         saveInvitationToSupabase({
             id: invitationId,
             partnerName,
+            partnerLastName,
+            partnerCompany,
             partnerPhone,
             partnerEmail,
             inviterKey,
+            inviterName: inviterInfo.name,
+            styleKey: style,
+            styleName: styleConfig.name,
             status: 'sent',
             link,
             sentAt: new Date().toISOString()
