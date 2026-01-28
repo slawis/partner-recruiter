@@ -527,8 +527,14 @@ function handleGenerateInvitation(e) {
         return;
     }
 
+    // Sprawdź czy jesteśmy w trybie edycji
+    const isEditing = AppState.editingInvitationId !== null;
+
     // Sprawdź czy już istnieje zaproszenie dla tego partnera (ten sam telefon lub email)
+    // Pomiń to sprawdzenie jeśli edytujemy to samo zaproszenie
     const existingInvitation = AppState.history.find(inv => {
+        // Pomiń edytowane zaproszenie
+        if (isEditing && inv.id === AppState.editingInvitationId) return false;
         // Sprawdź po telefonie (jeśli podany)
         if (partnerPhone && inv.partnerPhone === partnerPhone) return true;
         // Sprawdź po emailu (jeśli podany)
@@ -550,8 +556,8 @@ function handleGenerateInvitation(e) {
         }
     }
 
-    // Generate unique ID
-    const invitationId = generateId();
+    // Użyj istniejącego ID przy edycji lub wygeneruj nowy
+    const invitationId = isEditing ? AppState.editingInvitationId : generateId();
 
     // Prepare partner data for link
     const partnerData = {
@@ -601,22 +607,46 @@ function handleGenerateInvitation(e) {
         status: 'sent'
     };
 
-    // Add to history
-    AppState.history.unshift(AppState.currentInvitation);
-    AppState.stats.sent++;
+    // Dodaj lub zaktualizuj w historii
+    if (isEditing) {
+        // Tryb edycji - zaktualizuj istniejące zaproszenie
+        const existingIndex = AppState.history.findIndex(inv => inv.id === AppState.editingInvitationId);
+        if (existingIndex !== -1) {
+            // Zachowaj oryginalną datę utworzenia i status
+            AppState.currentInvitation.createdAt = AppState.history[existingIndex].createdAt || AppState.currentInvitation.createdAt;
+            AppState.currentInvitation.status = AppState.history[existingIndex].status;
+            AppState.currentInvitation.updatedAt = new Date().toISOString();
+            AppState.history[existingIndex] = AppState.currentInvitation;
+        }
+    } else {
+        // Nowe zaproszenie
+        AppState.history.unshift(AppState.currentInvitation);
+        AppState.stats.sent++;
+    }
     saveState();
 
-    // Zapisz do Supabase
-    saveInvitationToSupabase({
-        id: invitationId,
-        partnerName,
-        partnerPhone,
-        partnerEmail,
-        inviterKey,
-        status: 'sent',
-        link,
-        sentAt: new Date().toISOString()
-    });
+    // Zapisz do Supabase (insert lub update)
+    if (isEditing) {
+        updateInvitationInSupabase({
+            id: invitationId,
+            partnerName,
+            partnerPhone,
+            partnerEmail,
+            inviterKey,
+            link
+        });
+    } else {
+        saveInvitationToSupabase({
+            id: invitationId,
+            partnerName,
+            partnerPhone,
+            partnerEmail,
+            inviterKey,
+            status: 'sent',
+            link,
+            sentAt: new Date().toISOString()
+        });
+    }
 
     // Auto-zapis partnera (pośrednika)
     if (typeof findOrCreatePartner === 'function') {
@@ -658,17 +688,18 @@ function handleGenerateInvitation(e) {
     // Update preview frame
     const previewFrame = document.querySelector('.preview-frame');
     const fullName = partnerLastName ? `${partnerName} ${partnerLastName}` : partnerName;
+    const actionText = isEditing ? 'zaktualizowane' : 'wygenerowane';
     previewFrame.innerHTML = `
         <div style="text-align: center; padding: 20px;">
             <span style="font-size: 48px; display: block; margin-bottom: 16px;">✅</span>
-            <p style="color: var(--text-primary); font-size: 16px; margin-bottom: 8px;">Zaproszenie wygenerowane!</p>
+            <p style="color: var(--text-primary); font-size: 16px; margin-bottom: 8px;">Zaproszenie ${actionText}!</p>
             <p style="color: var(--text-secondary); font-size: 14px;">Dla: <strong>${fullName}</strong></p>
             ${partnerCompany ? `<p style="color: var(--text-muted); font-size: 13px;">${partnerCompany}</p>` : ''}
             <p style="color: var(--text-muted); font-size: 13px; margin-top: 16px;">Kliknij "Otwórz stronę" aby zobaczyć podgląd</p>
         </div>
     `;
 
-    showToast('Zaproszenie wygenerowane!', 'success');
+    showToast(`Zaproszenie ${actionText}!`, 'success');
 
     // Reset formularza po wygenerowaniu (żeby uniknąć duplikatów)
     document.getElementById('generatorForm').reset();

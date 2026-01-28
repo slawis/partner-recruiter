@@ -41,6 +41,30 @@ async function saveInvitationToSupabase(invitation) {
     }
 }
 
+// Aktualizacja zaproszenia (tryb edycji - zachowuje status i daty)
+async function updateInvitationInSupabase(invitation) {
+    const sb = getSupabase();
+    if (!sb) return;
+
+    try {
+        const { error } = await sb
+            .from('invitations')
+            .update({
+                partner_name: invitation.partnerName,
+                partner_phone: invitation.partnerPhone || '',
+                partner_email: invitation.partnerEmail || '',
+                inviter_key: invitation.inviterKey,
+                link: invitation.link || ''
+            })
+            .eq('id', invitation.id);
+
+        if (error) throw error;
+        console.log('Invitation updated in Supabase:', invitation.id);
+    } catch (err) {
+        console.error('Error updating invitation in Supabase:', err);
+    }
+}
+
 async function trackOpening(invitationId) {
     if (!invitationId) return;
 
