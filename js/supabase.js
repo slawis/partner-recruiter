@@ -25,7 +25,45 @@ async function waitForSupabase(maxWait = 5000) {
     while (!window.supabase && (Date.now() - startTime) < maxWait) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
-    return getSupabase();
+    const client = getSupabase();
+    if (!client) {
+        console.warn('Supabase SDK not loaded after', maxWait, 'ms');
+    }
+    return client;
+}
+
+// Test połączenia z Supabase i pokaż status
+async function testSupabaseConnection() {
+    const sb = await waitForSupabase(3000);
+
+    if (!sb) {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Brak połączenia z bazą danych', 'error');
+        }
+        return false;
+    }
+
+    try {
+        // Prosty test - sprawdź czy możemy połączyć się z bazą
+        const { error } = await sb.from('meetings').select('id').limit(1);
+
+        if (error) {
+            console.error('Supabase connection test failed:', error);
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Błąd połączenia z bazą: ' + error.message, 'error');
+            }
+            return false;
+        }
+
+        console.log('Supabase connection OK');
+        return true;
+    } catch (err) {
+        console.error('Supabase connection test error:', err);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Błąd połączenia: ' + err.message, 'error');
+        }
+        return false;
+    }
 }
 
 // ============ INVITATIONS ============
@@ -85,8 +123,14 @@ async function trackOpening(invitationId) {
 
     console.log('trackOpening called for:', invitationId);
 
-    // Poczekaj aż Supabase będzie gotowy
+    // Poczekaj aż Supabase będzie gotowy i przetestuj połączenie
     const sb = await waitForSupabase();
+
+    if (!sb) {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Baza niedostępna - dane zapisane lokalnie', 'warning');
+        }
+    }
 
     // Próbuj zaktualizować w Supabase
     if (sb) {
@@ -322,7 +366,13 @@ async function saveMeetingToSupabase(meeting) {
 
         if (error) throw error;
         console.log('Meeting saved to Supabase:', meeting.id, '→', data?.[0]?.id);
+        if (typeof showToast === 'function') {
+            showToast('✅ Spotkanie zsynchronizowane z bazą', 'success');
+        }
     } catch (err) {
         console.error('Error saving meeting to Supabase:', err);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Błąd zapisu do bazy: ' + err.message, 'error');
+        }
     }
 }
