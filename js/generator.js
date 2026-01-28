@@ -704,8 +704,12 @@ function handleGenerateInvitation(e) {
     // Reset formularza po wygenerowaniu (żeby uniknąć duplikatów)
     document.getElementById('generatorForm').reset();
 
-    // Wyczyść stan edycji
+    // Wyczyść stan edycji i przywróć tekst przycisku
     AppState.editingInvitationId = null;
+    const btnText = document.getElementById('btnGenerateText');
+    if (btnText) {
+        btnText.textContent = 'Generuj zaproszenie';
+    }
 
     // Switch to email tab
     switchPreviewTab('email');
@@ -917,6 +921,12 @@ function editInvitation(id) {
 
     // Zapisz ID edytowanego zaproszenia (do użycia przy generowaniu)
     AppState.editingInvitationId = id;
+
+    // Zmień tekst przycisku na "Aktualizuj zaproszenie"
+    const btnText = document.getElementById('btnGenerateText');
+    if (btnText) {
+        btnText.textContent = 'Aktualizuj zaproszenie';
+    }
 
     showToast('Dane załadowane do formularza', 'info');
 }
