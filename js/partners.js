@@ -432,12 +432,8 @@ async function deletePartner(partnerId) {
 
 // ============ RENDER PARTNERS SECTION ============
 function renderPartnersSection() {
-    console.log('renderPartnersSection called, partners:', PartnersState.partners.length);
     const container = document.getElementById('partnersGrid');
-    if (!container) {
-        console.error('partnersGrid container not found!');
-        return;
-    }
+    if (!container) return;
 
     // Filtruj partnerów
     let filtered = PartnersState.partners;

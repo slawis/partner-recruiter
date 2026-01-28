@@ -2545,7 +2545,8 @@
 
 /* Legacy support */
 .welcome-card { display: none; }
-.partner-card:not(.invitation-partner) { display: none; }
+/* Ukryj partner-card tylko na landing page, nie w panelu */
+#landingMode .partner-card:not(.invitation-partner) { display: none; }
 
 /* ===== QUICK STATS BAR ===== */
 .quick-stats-bar {
