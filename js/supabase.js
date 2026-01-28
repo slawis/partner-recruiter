@@ -345,6 +345,12 @@ async function saveMeetingToSupabase(meeting) {
         return;
     }
 
+    // Sprawdź czy invitationId jest prawidłowym UUID (jeśli nie - ustaw null)
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const invitationId = meeting.invitationId && uuidRegex.test(meeting.invitationId)
+        ? meeting.invitationId
+        : null;
+
     try {
         // Nie wysyłamy 'id' - Supabase wygeneruje UUID
         // Nasz lokalny ID przechowujemy w 'local_id'
@@ -352,7 +358,7 @@ async function saveMeetingToSupabase(meeting) {
             .from('meetings')
             .insert({
                 local_id: meeting.id, // Nasz lokalny ID jako tekst
-                invitation_id: meeting.invitationId || null,
+                invitation_id: invitationId,
                 inviter_key: meeting.inviterKey || meeting.inviterName || '',
                 partner_name: meeting.partnerName,
                 partner_phone: meeting.partnerPhone || '',
