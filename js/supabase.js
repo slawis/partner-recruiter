@@ -119,14 +119,20 @@ async function updateInvitationInSupabase(invitation) {
 }
 
 async function trackOpening(invitationId) {
-    if (!invitationId) return;
+    if (!invitationId) {
+        console.log('trackOpening: no invitationId');
+        return;
+    }
 
     console.log('trackOpening called for:', invitationId);
 
     // Sprawdź czy invitationId jest prawidłowym UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(invitationId)) {
-        console.log('trackOpening: invitationId is not UUID, skipping Supabase');
+        console.log('trackOpening: invitationId is not UUID:', invitationId);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Stary format ID - status nie zostanie zaktualizowany', 'warning');
+        }
         return;
     }
 
@@ -135,39 +141,57 @@ async function trackOpening(invitationId) {
 
     if (!sb) {
         if (typeof showToast === 'function') {
-            showToast('⚠️ Baza niedostępna - dane zapisane lokalnie', 'warning');
+            showToast('⚠️ Baza niedostępna', 'warning');
         }
         return;
     }
 
     // Próbuj zaktualizować w Supabase
     try {
-        const { error } = await sb
+        const { data, error } = await sb
             .from('invitations')
             .update({
                 status: 'opened',
                 opened_at: new Date().toISOString()
             })
             .eq('id', invitationId)
-            .eq('status', 'sent');
+            .eq('status', 'sent')
+            .select();
 
-        if (!error) {
-            console.log('Invitation opened tracked in Supabase:', invitationId);
+        if (error) {
+            console.error('trackOpening error:', error);
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Błąd aktualizacji statusu: ' + error.message, 'error');
+            }
+        } else {
+            console.log('Invitation opened tracked in Supabase:', invitationId, data);
+            if (typeof showToast === 'function') {
+                showToast('✅ Status zmieniony na: Otworzył', 'success');
+            }
         }
     } catch (err) {
         console.error('Error tracking opening in Supabase:', err);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Błąd: ' + err.message, 'error');
+        }
     }
 }
 
 async function updateInvitationStatus(invitationId, status) {
-    if (!invitationId) return;
+    if (!invitationId) {
+        console.log('updateInvitationStatus: no invitationId');
+        return;
+    }
 
     console.log('updateInvitationStatus called:', invitationId, status);
 
     // Sprawdź czy invitationId jest prawidłowym UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(invitationId)) {
-        console.log('updateInvitationStatus: invitationId is not UUID, skipping Supabase');
+        console.log('updateInvitationStatus: invitationId is not UUID:', invitationId);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Stary format ID - status nie zostanie zaktualizowany', 'warning');
+        }
         return;
     }
 
@@ -175,35 +199,47 @@ async function updateInvitationStatus(invitationId, status) {
     const sb = await waitForSupabase();
     const now = new Date().toISOString();
 
-    // Próbuj zaktualizować w Supabase
-    if (sb) {
-        try {
-            const updateData = { status };
-            if (status === 'registered') {
-                updateData.registered_at = now;
-            } else if (status === 'opened') {
-                updateData.opened_at = now;
-            }
-
-            const { error } = await sb
-                .from('invitations')
-                .update(updateData)
-                .eq('id', invitationId);
-
-            if (!error) {
-                console.log('Invitation status updated in Supabase:', invitationId, status);
-                return;
-            }
-        } catch (err) {
-            console.error('Error updating invitation status in Supabase:', err);
+    if (!sb) {
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Baza niedostępna', 'warning');
         }
+        return;
     }
 
-    // Fallback: localStorage
-    const savedHistory = localStorage.getItem('recruiter_history');
-    if (savedHistory) {
-        const history = JSON.parse(savedHistory);
-        const invitation = history.find(inv => inv.id === invitationId);
+    // Próbuj zaktualizować w Supabase
+    try {
+        const updateData = { status };
+        if (status === 'registered') {
+            updateData.registered_at = now;
+        } else if (status === 'opened') {
+            updateData.opened_at = now;
+        }
+
+        const { data, error } = await sb
+            .from('invitations')
+            .update(updateData)
+            .eq('id', invitationId)
+            .select();
+
+        if (error) {
+            console.error('updateInvitationStatus error:', error);
+            if (typeof showToast === 'function') {
+                showToast('⚠️ Błąd aktualizacji: ' + error.message, 'error');
+            }
+        } else {
+            console.log('Invitation status updated in Supabase:', invitationId, status, data);
+            const statusText = status === 'registered' ? 'Zarejestrowany' : status === 'opened' ? 'Otworzył' : status;
+            if (typeof showToast === 'function') {
+                showToast('✅ Status: ' + statusText, 'success');
+            }
+        }
+    } catch (err) {
+        console.error('Error updating invitation status in Supabase:', err);
+        if (typeof showToast === 'function') {
+            showToast('⚠️ Błąd: ' + err.message, 'error');
+        }
+    }
+}
 
         if (invitation) {
             invitation.status = status;
