@@ -7,6 +7,7 @@
 let AppState = {
     mode: 'generator', // 'generator' or 'landing'
     currentInvitation: null,
+    editingInvitationId: null, // ID zaproszenia w trybie edycji
     history: [],
     stats: {
         sent: 0,

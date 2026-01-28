@@ -673,6 +673,9 @@ function handleGenerateInvitation(e) {
     // Reset formularza po wygenerowaniu (żeby uniknąć duplikatów)
     document.getElementById('generatorForm').reset();
 
+    // Wyczyść stan edycji
+    AppState.editingInvitationId = null;
+
     // Switch to email tab
     switchPreviewTab('email');
 }
@@ -805,6 +808,7 @@ function renderHistory() {
                     </span>
                 </td>
                 <td class="td-actions">
+                    <button class="action-btn" onclick="editInvitation('${inv.id}')" title="Edytuj">✏️</button>
                     <button class="action-btn" onclick="copyInvitationLink('${inv.id}')" title="Kopiuj link">🔗</button>
                     <button class="action-btn" onclick="openInvitationLink('${inv.id}')" title="Otwórz">🚀</button>
                     <button class="action-btn action-btn-delete" onclick="deleteInvitation('${inv.id}')" title="Usuń">🗑️</button>
@@ -831,6 +835,59 @@ function openInvitationLink(id) {
     if (inv) {
         window.open(inv.link, '_blank');
     }
+}
+
+// Edycja zaproszenia - wypełnia formularz danymi i przełącza na Generator
+function editInvitation(id) {
+    const inv = AppState.history.find(i => i.id === id);
+    if (!inv) {
+        showToast('Nie znaleziono zaproszenia', 'error');
+        return;
+    }
+
+    // Przełącz na sekcję Generator
+    if (typeof switchSection === 'function') {
+        switchSection('generator');
+    }
+
+    // Wypełnij formularz danymi zaproszenia
+    const partnerNameEl = document.getElementById('partnerName');
+    const partnerLastNameEl = document.getElementById('partnerLastName');
+    const partnerCompanyEl = document.getElementById('partnerCompany');
+    const partnerNIPEl = document.getElementById('partnerNIP');
+    const partnerPhoneEl = document.getElementById('partnerPhone');
+    const partnerEmailEl = document.getElementById('partnerEmail');
+    const partnerAddressEl = document.getElementById('partnerAddress');
+    const inviterSelectEl = document.getElementById('inviterSelect');
+    const emailStyleEl = document.getElementById('emailStyle');
+
+    if (partnerNameEl) partnerNameEl.value = inv.partnerName || '';
+    if (partnerLastNameEl) partnerLastNameEl.value = inv.partnerLastName || '';
+    if (partnerCompanyEl) partnerCompanyEl.value = inv.partnerCompany || '';
+    if (partnerNIPEl) partnerNIPEl.value = inv.partnerNIP || '';
+    if (partnerPhoneEl) partnerPhoneEl.value = inv.partnerPhone || '';
+    if (partnerEmailEl) partnerEmailEl.value = inv.partnerEmail || '';
+    if (partnerAddressEl) partnerAddressEl.value = inv.partnerAddress || '';
+
+    // Ustaw zapraszającego
+    if (inviterSelectEl && inv.inviterKey) {
+        inviterSelectEl.value = inv.inviterKey;
+    }
+
+    // Ustaw styl emaila
+    if (emailStyleEl && inv.styleKey) {
+        emailStyleEl.value = inv.styleKey;
+    }
+
+    // Zaktualizuj podgląd emaila
+    if (typeof updateEmailPreview === 'function') {
+        updateEmailPreview();
+    }
+
+    // Zapisz ID edytowanego zaproszenia (do użycia przy generowaniu)
+    AppState.editingInvitationId = id;
+
+    showToast('Dane załadowane do formularza', 'info');
 }
 
 function clearHistory() {
