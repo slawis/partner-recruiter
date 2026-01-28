@@ -8,6 +8,7 @@ const CONFIG = {
     baseUrl: window.location.origin + window.location.pathname,
     inviters: {
         'Sławek': { name: 'Sławomir Wiśniewski', role: 'Właściciel', phone: '', email: '' },
+        'slawomir': { name: 'Sławomir Wiśniewski', role: 'Partner Manager', phone: '+48 123 456 789', email: '' },
         'Marcin': { name: 'Marcin Górecki', role: 'Manager', phone: '606 285 419', email: '' },
         'Irek': { name: 'Irek Lewandowski', role: 'Manager', phone: '533 210 540', email: '' }
     },
