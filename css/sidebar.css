@@ -193,24 +193,28 @@
 }
 
 .sidebar-logout-btn {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
-    border: 1px solid var(--border-light);
+    background: var(--bg-subtle);
+    border: none;
     border-radius: var(--radius-md);
-    color: var(--text-secondary);
+    color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.sidebar-logout-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .sidebar-logout-btn:hover {
-    background: var(--danger-bg);
-    border-color: var(--danger);
-    color: var(--danger);
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 /* ===== MAIN CONTENT AREA ===== */
