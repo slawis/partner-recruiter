@@ -241,25 +241,6 @@ async function updateInvitationStatus(invitationId, status) {
     }
 }
 
-        if (invitation) {
-            invitation.status = status;
-            if (status === 'registered') {
-                invitation.registeredAt = now;
-
-                // Update stats
-                const savedStats = localStorage.getItem('recruiter_stats');
-                if (savedStats) {
-                    const stats = JSON.parse(savedStats);
-                    stats.converted++;
-                    localStorage.setItem('recruiter_stats', JSON.stringify(stats));
-                }
-            }
-
-            localStorage.setItem('recruiter_history', JSON.stringify(history));
-        }
-    }
-}
-
 async function deleteAllInvitationsFromSupabase() {
     const sb = getSupabase();
     if (sb) {
