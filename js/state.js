@@ -115,18 +115,42 @@ async function loadState() {
 
             if (invitations && invitations.length > 0) {
                 // Mapuj dane z Supabase na format aplikacji
-                AppState.history = invitations.map(inv => ({
-                    id: inv.id,
-                    partnerName: inv.partner_name,
-                    partnerPhone: inv.partner_phone || '',
-                    partnerEmail: inv.partner_email || '',
-                    inviterKey: inv.inviter_key,
-                    status: inv.status,
-                    link: inv.link || '',
-                    sentAt: inv.sent_at,
-                    openedAt: inv.opened_at,
-                    registeredAt: inv.registered_at
-                }));
+                AppState.history = invitations.map(inv => {
+                    // Pobierz dane zapraszającego z CONFIG lub InvitersState
+                    const inviterKey = inv.inviter_key || '';
+                    let inviterName = inviterKey;
+                    if (typeof InvitersState !== 'undefined' && InvitersState.inviters) {
+                        const inviter = InvitersState.inviters.find(i => i.key === inviterKey);
+                        if (inviter) inviterName = inviter.name;
+                    } else if (typeof CONFIG !== 'undefined' && CONFIG.inviters && CONFIG.inviters[inviterKey]) {
+                        inviterName = CONFIG.inviters[inviterKey].name;
+                    }
+
+                    // Pobierz nazwę stylu z CONFIG
+                    const styleKey = inv.style_key || 'direct';
+                    let styleName = styleKey;
+                    if (typeof CONFIG !== 'undefined' && CONFIG.emailStyles && CONFIG.emailStyles[styleKey]) {
+                        styleName = CONFIG.emailStyles[styleKey].name;
+                    }
+
+                    return {
+                        id: inv.id,
+                        partnerName: inv.partner_name,
+                        partnerLastName: inv.partner_last_name || '',
+                        partnerCompany: inv.partner_company || '',
+                        partnerPhone: inv.partner_phone || '',
+                        partnerEmail: inv.partner_email || '',
+                        inviterKey: inviterKey,
+                        inviterName: inviterName,
+                        styleKey: styleKey,
+                        styleName: styleName,
+                        status: inv.status,
+                        link: inv.link || '',
+                        sentAt: inv.sent_at,
+                        openedAt: inv.opened_at,
+                        registeredAt: inv.registered_at
+                    };
+                });
 
                 // Oblicz statystyki
                 AppState.stats = {
