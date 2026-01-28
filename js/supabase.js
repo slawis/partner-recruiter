@@ -8,9 +8,24 @@ let supabaseClient = null;
 
 function getSupabase() {
     if (!supabaseClient && window.supabase) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('Supabase client initialized');
+        } catch (err) {
+            console.error('Error creating Supabase client:', err);
+            return null;
+        }
     }
     return supabaseClient;
+}
+
+// Poczekaj aż Supabase będzie gotowy (max 5 sekund)
+async function waitForSupabase(maxWait = 5000) {
+    const startTime = Date.now();
+    while (!window.supabase && (Date.now() - startTime) < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return getSupabase();
 }
 
 // ============ INVITATIONS ============
@@ -68,7 +83,10 @@ async function updateInvitationInSupabase(invitation) {
 async function trackOpening(invitationId) {
     if (!invitationId) return;
 
-    const sb = getSupabase();
+    console.log('trackOpening called for:', invitationId);
+
+    // Poczekaj aż Supabase będzie gotowy
+    const sb = await waitForSupabase();
 
     // Próbuj zaktualizować w Supabase
     if (sb) {
@@ -117,7 +135,10 @@ async function trackOpening(invitationId) {
 async function updateInvitationStatus(invitationId, status) {
     if (!invitationId) return;
 
-    const sb = getSupabase();
+    console.log('updateInvitationStatus called:', invitationId, status);
+
+    // Poczekaj aż Supabase będzie gotowy
+    const sb = await waitForSupabase();
     const now = new Date().toISOString();
 
     // Próbuj zaktualizować w Supabase
@@ -271,8 +292,14 @@ async function saveMeetings(meetings) {
 }
 
 async function saveMeetingToSupabase(meeting) {
-    const sb = getSupabase();
-    if (!sb) return;
+    console.log('saveMeetingToSupabase called:', meeting.partnerName);
+
+    // Poczekaj aż Supabase będzie gotowy
+    const sb = await waitForSupabase();
+    if (!sb) {
+        console.warn('Supabase not available, meeting saved only to localStorage');
+        return;
+    }
 
     try {
         // Nie wysyłamy 'id' - Supabase wygeneruje UUID
