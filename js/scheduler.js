@@ -493,6 +493,7 @@ function handleMobileScheduleSubmit(e) {
         time: mobileAppState.selectedTime,
         method: mobileAppState.selectedMethod,
         formattedDateTime: `${formattedDate}, godz. ${mobileAppState.selectedTime}`,
+        inviterKey: AppState.landingParams.inviterKey || '',
         inviterName: AppState.landingParams.inviterName,
         invitationId: AppState.landingParams.invitationId,
         scheduledAt: new Date().toISOString()
@@ -805,7 +806,8 @@ function handleDesktopScheduleSubmit(e) {
         partnerName: urlParams.get('n') || 'Partner',
         partnerPhone: urlParams.get('p') || '',
         partnerEmail: urlParams.get('e') || '',
-        inviterName: urlParams.get('z') || 'Nieznany',
+        inviterKey: urlParams.get('z') || '',
+        inviterName: AppState.landingParams.inviterName || urlParams.get('z') || 'Nieznany',
         invitationId: AppState.landingParams.invitationId,
         scheduledAt: new Date().toISOString()
     };
