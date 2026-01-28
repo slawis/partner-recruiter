@@ -16,11 +16,11 @@ const PartnersState = {
 
 // ============ STATUS CONFIGURATION ============
 const PARTNER_STATUSES = {
-    lead: { label: 'Lead', color: 'gray', icon: '🔵' },
-    contacted: { label: 'Skontaktowano', color: 'blue', icon: '📞' },
-    meeting: { label: 'Spotkanie', color: 'orange', icon: '📅' },
-    converted: { label: 'Współpraca', color: 'green', icon: '✅' },
-    rejected: { label: 'Odmowa', color: 'red', icon: '❌' }
+    lead: { label: 'Lead', color: 'gray' },
+    contacted: { label: 'Skontaktowano', color: 'blue' },
+    meeting: { label: 'Spotkanie', color: 'orange' },
+    converted: { label: 'Współpraca', color: 'green' },
+    rejected: { label: 'Odmowa', color: 'red' }
 };
 
 // ============ LOAD PARTNERS ============
@@ -529,13 +529,15 @@ function renderPartnerRow(partner) {
             <td class="td-status">
                 <div class="partner-status-dropdown">
                     <button class="status-badge-btn status-${statusConfig.color}" onclick="togglePartnerStatusDropdown('${partner.id}')">
-                        ${statusConfig.icon} ${statusConfig.label}
+                        <span class="status-dot"></span>
+                        ${statusConfig.label}
                         <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="partner-status-menu" id="statusMenu-${partner.id}">
                         ${Object.entries(PARTNER_STATUSES).map(([key, config]) => `
-                            <button class="status-menu-item ${partner.status === key ? 'active' : ''}" onclick="changePartnerStatus('${partner.id}', '${key}')">
-                                ${config.icon} ${config.label}
+                            <button class="status-menu-item status-${config.color} ${partner.status === key ? 'active' : ''}" onclick="changePartnerStatus('${partner.id}', '${key}')">
+                                <span class="status-dot"></span>
+                                ${config.label}
                             </button>
                         `).join('')}
                     </div>
